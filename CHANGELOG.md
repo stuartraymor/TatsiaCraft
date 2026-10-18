@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.3
+
+- Add a canvas hand tool that pans the workspace without changing clip properties, export geometry, dirty state or undo history.
+- Hide transform grips while panning and make selection, crop and pan modes mutually exclusive.
+- Recenter the viewport when choosing Fit, including when Fit is already selected.
+- Retain pan across source refresh, magnification changes and canvas detachment; reset it for a different project.
+- Add 33 viewport/mode/state acceptance checks and include them in the install-and-publish release gate.
+
+Actual mouse testing matched the measured 50×30 view displacement with unchanged Scale100% and Position X/Y0; Fit returned to center. Pan remains session-local. Saved viewport state, temporary pan shortcuts, wheel anchors, reference viewport constraints and exact hand-icon artwork remain unverified.
+
 ## 0.0.2
 
 - Add an evidence-driven feature/workflow parity plan and explicit remaining gaps.

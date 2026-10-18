@@ -37,6 +37,13 @@ namespace TasiaCraft {
   Point down; double oldX,oldY,oldScale,oldRotation; string gesture;
   double oldCropLeft,oldCropTop,oldCropRight,oldCropBottom;
   public bool CropMode {get;private set;}
+  readonly TranslateTransform viewTranslation=new TranslateTransform();
+  bool panning;Point panDown;Vector panOrigin;
+  public bool PanMode {get;private set;}
+  public Vector ViewOffset {get{return new Vector(viewTranslation.X,viewTranslation.Y);}}
+  public void SetViewOffset(double x,double y){if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y))throw new ArgumentException("Viewport offset must be finite");viewTranslation.X=Math.Max(-32768,Math.Min(32768,x));viewTranslation.Y=Math.Max(-32768,Math.Min(32768,y));}
+  public void ResetViewOffset(){SetViewOffset(0,0);}
+  public void SetPanMode(bool enabled){EndDrag(this,null);PanMode=enabled;if(enabled)CropMode=false;panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Cursor=enabled?Cursors.Hand:Cursors.Arrow;DrawHandles();Say(enabled?"Pan: drag the workspace; clip properties and export stay unchanged":"Select canvas");}
   public Canvas Stage {get;private set;}
   public double ViewZoom {get;private set;}
   public double Position {get{return position;}}
@@ -48,7 +55,11 @@ namespace TasiaCraft {
   public LivePreview() {
    Stage=new ProjectCanvas{Width=1280,Height=720,Background=Brushes.Black,ClipToBounds=false};
    AutomationProperties.SetAutomationId(Stage,"ProjectCanvas");AutomationProperties.SetName(Stage,"Project canvas");
-   viewport.Child=Stage;viewport.ClipToBounds=false;Content=viewport;Background=Brushes.Transparent;ClipToBounds=true;
+   viewport.Child=Stage;viewport.RenderTransform=viewTranslation;viewport.ClipToBounds=false;Content=viewport;Background=Brushes.Transparent;ClipToBounds=true;
+   PreviewMouseLeftButtonDown+=(s,e)=>{if(!PanMode)return;panDown=e.GetPosition(this);panOrigin=ViewOffset;panning=true;CaptureMouse();e.Handled=true;};
+   PreviewMouseMove+=(s,e)=>{if(!panning||e.LeftButton!=MouseButtonState.Pressed)return;Vector delta=e.GetPosition(this)-panDown;SetViewOffset(panOrigin.X+delta.X,panOrigin.Y+delta.Y);e.Handled=true;};
+   PreviewMouseLeftButtonUp+=(s,e)=>{if(!panning)return;panning=false;ReleaseMouseCapture();e.Handled=true;};
+   LostMouseCapture+=(s,e)=>{if(e.OriginalSource==this)panning=false;};
    Loaded+=(s,e)=>SetViewZoom(ViewZoom);
    Stage.Children.Add(handles); Panel.SetZIndex(handles,int.MaxValue);
    Stage.MouseLeftButtonDown+=(s,e)=>{if(e.OriginalSource==Stage){SetSelection(null);if(Selecting!=null)Selecting(null);}};
@@ -61,7 +72,7 @@ namespace TasiaCraft {
   double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
   public void SetProject(Project value){
    bool resume=IsPlaying;Pause();
-   if(!object.ReferenceEquals(project,value)){ClearLayers();project=value;}
+   if(!object.ReferenceEquals(project,value)){ClearLayers();project=value;ResetViewOffset();}
    if(project==null){position=0;handles.Children.Clear();return;}
    Stage.Width=project.Width;Stage.Height=project.Height;
    SetViewZoom(ViewZoom);
@@ -70,7 +81,7 @@ namespace TasiaCraft {
    Seek(position);if(resume)Play();
   }
   public void SetSelection(Clip value){selection=value;DrawHandles();}
-  public void SetCropMode(bool enabled){EndDrag(this,null);CropMode=enabled;DrawHandles();Say(enabled?"Crop: drag an edge or corner; source position and scale stay fixed":"Select: drag to move or use transform handles");}
+  public void SetCropMode(bool enabled){SetPanMode(false);EndDrag(this,null);CropMode=enabled;DrawHandles();Say(enabled?"Crop: drag an edge or corner; source position and scale stay fixed":"Select: drag to move or use transform handles");}
   // Viewport magnification never mutates clip transforms or export geometry.
   public void SetViewZoom(double zoom){
    ViewZoom=double.IsNaN(zoom)?0:Math.Max(0,Math.Min(20,zoom));
@@ -188,7 +199,7 @@ namespace TasiaCraft {
    }
   }
   void DrawHandles(){
-   handles.Children.Clear();if(project==null||selection==null||IsPlaying||Hidden(selection)||Locked(selection))return;
+   handles.Children.Clear();if(project==null||selection==null||IsPlaying||PanMode||Hidden(selection)||Locked(selection))return;
    Layer l;if(!layers.TryGetValue(selection.Id,out l)||!l.Active||l.Media!=null&&l.Media.Kind=="audio")return;
    double elapsed=Math.Max(0,Math.Min(selection.Duration,position-selection.Start)),k=selection.Animate?elapsed/selection.Duration:0;
    double scale=selection.Scale+(selection.EndScale-selection.Scale)*k,w=l.Box.Width*scale,h=l.Box.Height*scale;
@@ -242,7 +253,7 @@ namespace TasiaCraft {
    KeyValuePair<Process,string>[] running;
    lock(proxyProcesses){if(disposed)return;disposed=true;running=proxyProcesses.ToArray();foreach(var pair in running)try{if(!pair.Key.HasExited)pair.Key.Kill();}catch(InvalidOperationException){}catch(System.ComponentModel.Win32Exception){}}
    foreach(var pair in running){try{pair.Key.WaitForExit(1000);}catch(InvalidOperationException){}try{if(File.Exists(pair.Value))File.Delete(pair.Value);}catch(IOException){}catch(UnauthorizedAccessException){}}
-   Pause();timer.Stop();ClearLayers();handles.Children.Clear();
+   panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Pause();timer.Stop();ClearLayers();handles.Children.Clear();
   }
  }
 }

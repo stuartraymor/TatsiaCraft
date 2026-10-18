@@ -19,7 +19,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | Order | Workflow | Implementation/evidence status | Required validation |
 |---|---|---|---|
 | 1 | Workspace, Home, menu/navigation, version display, detached canvas, zoom | Basic implementation; version and detached zoom tested; detailed styling differs | Every control/state, matching window/DPI captures, shortcuts, focus, small/large windows |
-| 2 | Canvas select, move, resize, rotate, crop, pan, guides, align, fit | Move/resize/rotate exist; crop is next; pan/guides/advanced transforms open | Native-size geometry, every handle/modifier, off-canvas display, undo, saved data and exported pixels |
+| 2 | Canvas select, move, resize, rotate, crop, pan, guides, align, fit | Move/resize/rotate exist; measured crop and hand-pan increments implemented; guides/advanced transforms and exact interaction parity open | Native-size geometry, every handle/modifier, off-canvas display, undo, saved data and exported pixels |
 | 3 | Import, media bin, sort/filter/search, library, favorites, templates | Limited original implementation | Formats, duplicates, missing/relinked media, metadata, drag/drop and persistence |
 | 4 | Timeline move/trim/split/delete, ranges, snapping, zoom, track controls | Basic edits/track visibility/lock exist | Exact boundaries, frame rounding, same-track overlaps, disabled states, shortcut equivalence |
 | 5 | Multiple selection, grouping, ripple editing, markers, AV separation | Mostly open | Selection and group state, linked timing, ripple propagation, undo/save/export |
@@ -42,6 +42,9 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 
 - 0.0.1: shared version identity, top-left version display and required GitHub release workflow; 28 canvas/title checks passed.
 - 0.0.2 increment: four-edge/corner canvas cropping through preview, serialized projects and export; independent crop controls and original iconography; versioned install and installed startup verification. 37 crop acceptance checks passed. Actual mouse drag from uncropped source persisted CropLeft25%, Scale100%, Position X/Y0; one undo restored the original visible source. Pan/advanced-transform and full crop interaction parity remain open.
+- 0.0.3 increment: canvas hand/pan mode. Observed reference hand mode hides selection grips; a 50×30 logical-pixel drag moves the displayed project by 50×30 while Position X/Y remain0, Scale100% and Width320. Choosing Fit recenters. 33 checks passed for viewport-only displacement, unchanged project/export data, hidden grips in hand mode, retained pan across refresh/detach, reset on a different project and no undo checkpoint. Actual mouse testing reproduced the displacement and Fit reset, including selecting an already-selected Fit entry. This does not establish wheel zoom anchors, modifier shortcuts, saved viewport state or every high-zoom scroll interaction.
+
+Next unmet canvas acceptance checks: cropped-object resize anchoring, source movement inside a crop, off-canvas dimming and align/snap guides. Then expand the command/context-menu inventory and timeline selection/ripple workflows. No entire workstream is marked complete by these increments.
 
 Crop-specific residuals: source movement within a crop, modifier keys, cropped-object resize anchoring, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
 
