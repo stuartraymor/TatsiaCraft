@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.11
+
+- Reorganize menus to the observed reference structure and wording: File (Recent Projects, Import submenu), Edit (Split Selected, Select, Deselect All, Jump To), Modify, View (Tools, Canvas and Timeline submenus, Hide/Show Properties), Export (Local File..., Export Frame As...) and Help (Quick Start Guide, Keyboard Shortcuts), with shortcut text.
+- Replace text glyphs with original vector icons for Home, Record, Export, left tool navigation, transport, Properties and timeline zoom. Use reference tooltips, a pill-shaped Record button, round transport buttons, green Properties/Export buttons and an accent bar on the active tool.
+- Use the window caption `TatsiaCraft <version> - Untitled Project*`, an `mm:ss` transport clock with frame rate and speed, and `h:mm:ss;ff` timeline time. Move Add a track to the track header corner and remove the duplicate toolbar Project Settings button.
+- Add working shortcuts and commands: , and . for frame step, Home/End, Ctrl+Alt+, and Ctrl+Alt+. for previous/next media, Ctrl+2 for Properties, Ctrl+= and Ctrl+- for canvas zoom, Ctrl+Shift+= and Ctrl+Shift+- for timeline zoom, Ctrl+Shift+7 for zoom to fit, and Ctrl+Shift+F for frame export. Keep the timeline zoom slider in sync.
+- Add 75 UI wording, menu, tooltip, icon and shortcut checks. Reference-only tools (Favorites, Behaviors, Cursor Effects, Narration, markers, quizzes and others) are not shown until they are implemented. Pixel-level icon parity is not claimed.
+
 ## 0.0.10
 
 - Rename complete groups from properties, Edit and timeline context menus, with an owned Rename/Cancel dialog and visible validation errors.

@@ -18,7 +18,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 
 | Order | Workflow | Implementation/evidence status | Required validation |
 |---|---|---|---|
-| 1 | Workspace, Home, menu/navigation, version display, detached canvas, zoom | Basic implementation; version and detached zoom tested; detailed styling differs | Every control/state, matching window/DPI captures, shortcuts, focus, small/large windows |
+| 1 | Workspace, Home, menu/navigation, version display, detached canvas, zoom | Menus, tooltips, tool order, caption, transport/timeline toolbars and icons follow observed reference wording and layout (0.0.11); reference-only tools not yet implemented; pixel styling unmeasured | Every control/state, matching window/DPI captures, shortcuts, focus, small/large windows |
 | 2 | Canvas select, move, resize, rotate, crop, pan, guides, align, fit | Move/resize/rotate exist; measured crop and hand-pan increments implemented; basic alignment/snapping guides implemented; advanced transforms and exact interaction parity open | Native-size geometry, every handle/modifier, off-canvas display, undo, saved data and exported pixels |
 | 3 | Import, media bin, sort/filter/search, library, favorites, templates | Limited original implementation | Formats, duplicates, missing/relinked media, metadata, drag/drop and persistence |
 | 4 | Timeline move/trim/split/delete, ranges, snapping, zoom, track controls | Basic edits/track visibility/lock exist | Exact boundaries, frame rounding, same-track overlaps, disabled states, shortcut equivalence |
@@ -72,3 +72,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 
 
 - 0.0.10 increment: group naming through properties, Edit and timeline context menu, owned Rename/Cancel dialog, guarded Unicode names, no-op/invalid state protection and one-checkpoint undo/save. [GROUP-RENAME-EVIDENCE.md](GROUP-RENAME-EVIDENCE.md) distinguishes the observed reference menu entry from independent dialog/validation choices. 37 additional checks (grouping suite223) verify name-only mutation, preview/export preservation and error/undo/save behavior. Nested hierarchy, group transforms/effects and exact reference rename-dialog/shortcut behavior remain open.
+
+
+- 0.0.11 increment: interface wording, menu structure, tooltips and original vector iconography follow the live reference UI Automation inventory (1,478 nodes, all six menus expanded without invoking them) and a matched-size screenshot. [UI-WORDING-EVIDENCE.md](UI-WORDING-EVIDENCE.md) lists the reproduced wording, the reference-only entries left out until they are implemented, and the limits. 75 checks cover menus, tooltips, caption, time formats, navigation and the new shortcuts. REA native UI observation is Mach-O-only and was not used. Pixel-level icon/layout parity and the empty Properties placeholder remain open.

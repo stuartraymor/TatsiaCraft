@@ -55,12 +55,12 @@ public partial class Editor {
   }else if(name=="Transitions"){
    foreach(double seconds in new[]{.25,.5,1.0,2.0}){double duration=seconds;tile("Fade "+seconds.ToString("0.##")+" s","Fade",()=>EditPreset(c=>c.FadeIn=c.FadeOut=Math.Min(duration,c.Duration/2)));}
    tile("Remove fades","Remove",()=>EditPreset(c=>c.FadeIn=c.FadeOut=0));
-  }else if(name=="Visual effects"){
+  }else if(name=="Visual Effects"){
    foreach(string effect in new[]{"Grayscale","Blur","Sharpen"}){string fx=effect;tile(fx,fx,()=>EditPreset(c=>c.Effect=fx.ToLowerInvariant()));}
    tile("Remove effect","Remove",()=>EditPreset(c=>c.Effect=null));tile("Reset transform","Reset",()=>EditPreset(c=>{c.Scale=1;c.X=c.Y=c.Rotation=0;c.Opacity=1;c.Animate=false;}));
   }else if(name=="Animations"){
    tile("Pan right","Pan right",()=>AnimateClip(false));tile("Zoom in","Zoom in",()=>AnimateClip(true));tile("Remove animation","Remove",()=>EditPreset(c=>c.Animate=false));
-  }else if(name=="Audio effects"){
+  }else if(name=="Audio Effects"){
    tile("Normalize","Audio",()=>EditPreset(c=>c.AudioEffect="normalize"));tile("Noise reduction","Audio",()=>EditPreset(c=>c.AudioEffect="noise reduction"));tile("Remove effect","Remove",()=>EditPreset(c=>c.AudioEffect=null));
    tile("Mute","Mute",()=>EditPreset(c=>c.Volume=0));tile("Restore gain","Audio",()=>EditPreset(c=>c.Volume=1));tile("Audio fade","Fade",()=>EditPreset(c=>c.FadeIn=c.FadeOut=Math.Min(.5,c.Duration/2)));
    library.Children.Add(Text("Fade presets affect both audio and video. Gain and fade durations can be adjusted in Properties.",11,muted));
