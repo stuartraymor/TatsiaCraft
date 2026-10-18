@@ -4,6 +4,10 @@ An independent Windows video editor written in C# and WPF, with an external FFmp
 
 This repository contains original application source and tests under the MIT license. It is a development preview with partial feature coverage. Complete Camtasia parity, identical artwork and layout, and comparative performance improvements have **not** been established. This project is not affiliated with TechSmith.
 
+## Revisions
+
+Current version: see [VERSION](VERSION). The top-left title bar, Home and About display that same version. Revisions run from 0.0.1 through 0.0.12, then 0.1.0; minor also rolls over after 12. Every completed revision must be uploaded to GitHub and published as a release. Developers must follow [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md), using `scripts/release.ps1` to validate and publish.
+
 ## Build
 
 Requirements: x64 Windows, .NET Framework 4.8 desktop runtime and its Framework compiler. No Visual Studio or .NET SDK is needed for the existing build script.
@@ -33,7 +37,7 @@ Coverage is limited. Advanced keyframes, ripple/group/multiple selection editing
 powershell -ExecutionPolicy Bypass -File scripts/test-canvas.ps1
 ```
 
-This builds and runs the isolated canvas workspace harness on an interactive Windows desktop. Its 26 checks exercise all zoom levels, detaching/reattaching, playback, shutdown and unchanged serialized project geometry. Results are written under `artifacts/`.
+This builds and runs the isolated canvas workspace harness on an interactive Windows desktop. Its 28 checks exercise versioned title states, all zoom levels, detaching/reattaching, playback, shutdown and unchanged serialized project geometry. Results are written under `artifacts/`.
 
 `tests/LivePreviewTest.cs` is an additional integration harness requiring FFmpeg/FFprobe and generated image/video fixtures under an explicitly supplied test root. It is retained for development and is not invoked by the canvas script.
 

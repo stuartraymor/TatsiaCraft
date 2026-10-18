@@ -1,5 +1,4 @@
 using System.Reflection;
-[assembly: AssemblyTitle("TasiaCraft")]
+[assembly: AssemblyTitle("TatsiaCraft")]
 [assembly: AssemblyDescription("Independent Windows video editor")]
-[assembly: AssemblyVersion("0.2.0.0")]
-[assembly: AssemblyFileVersion("0.2.0.0")]
+// Version attributes are generated from VERSION by scripts/build.ps1.

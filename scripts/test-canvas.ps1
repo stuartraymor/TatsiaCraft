@@ -12,4 +12,4 @@ $testProcess=Start-Process -FilePath $testPath -ArgumentList ('"'+$logPath+'"') 
 if(-not $testProcess.WaitForExit(30000)){Stop-Process -Id $testProcess.Id;throw 'Canvas test timed out'}
 Get-Content -LiteralPath $logPath
 if($testProcess.ExitCode -ne 0){throw ('Canvas test failed: '+$testProcess.ExitCode)}
-if(-not (Select-String -LiteralPath $logPath -SimpleMatch 'PASS total 26' -Quiet)){throw 'Canvas suite did not finish'}
+if(-not (Select-String -LiteralPath $logPath -SimpleMatch 'PASS total 28' -Quiet)){throw 'Canvas suite did not finish'}

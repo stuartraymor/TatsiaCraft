@@ -19,6 +19,8 @@ public static class CanvasWorkspaceTest {
    Invoke(editor,"HideHome");var project=(Project)Field(editor,"project");project.Width=320;project.Height=180;
    var clip=new Clip{Text="Canvas regression",Duration=10,Scale=.5,X=10,Y=20};project.Clips.Add(clip);Invoke(editor,"Refresh");
    var live=(LivePreview)Field(editor,"live");var zoom=(ComboBox)Field(editor,"canvasZoom");
+   Require(editor.Title.StartsWith(ProductInfo.DisplayName+" — "),"top left title includes shared product version");
+   Invoke(editor,"Invalidate");Require(editor.Title.StartsWith(ProductInfo.DisplayName+" — ")&&editor.Title.EndsWith(" *"),"unsaved project title retains product version");typeof(Editor).GetField("dirty",flags).SetValue(editor,false);
    string original=new JavaScriptSerializer().Serialize(project);
    Require(zoom.Items.Count==13,"all observed zoom levels and canvas commands exposed");
    foreach(int percent in new[]{25,50,75,100,200,300,800,1200,1600,2000}){

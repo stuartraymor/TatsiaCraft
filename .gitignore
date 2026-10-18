@@ -12,3 +12,7 @@ vendor/
 *.trec
 *.tscproj
 .vs/
+.env
+.env.*
+*.pem
+*.key

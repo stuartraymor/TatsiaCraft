@@ -1,0 +1,11 @@
+# Developer and agent instructions
+
+Every completed revision must be uploaded to https://github.com/stuartraymor/TatsiaCraft and published as a GitHub release. Local changes or a local build alone do not complete a revision. Do not report a release as published until the remote commit, tag, release and assets have been verified. If authentication or networking blocks publication, report the blocker and preserve the local work.
+
+Use `scripts/release.ps1 -Message "Describe the revision"` after staging the intended source changes. The script validates the build and canvas regression tests, assigns the next revision, commits, pushes main and the version tag, and publishes the GitHub release with executable and source assets. Do not put credentials, local recordings, proprietary reference assets or generated dependency binaries in Git.
+
+`VERSION` is the only version source. Minor and patch positions range from 0 through 12. Sequence: 0.0.0 → 0.0.1 → … → 0.0.12 → 0.1.0; 0.12.12 → 1.0.0. Each completed revision receives one new version; intermediate edits and test repairs belong to that same revision.
+
+Display `TatsiaCraft <version>` in the top-left native title bar beside the application icon, including project open/save/dirty states. Home and About must use the same version. Preserve existing project formats, media and user data while revising the product.
+
+The application is an independent development preview. Do not claim complete reference parity or comparative speed/quality improvements without supporting verification.
