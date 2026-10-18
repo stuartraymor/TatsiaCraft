@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.2
+
+- Add an evidence-driven feature/workflow parity plan and explicit remaining gaps.
+- Add canvas Crop mode with edge/corner handles, numeric crop properties, reset and undo. Cropping retains source placement, scale and transform pivot.
+- Preserve crop through project save/reopen, preview composition and transparent video/image export; reject invalid crops and retain legacy uncropped defaults.
+- Add 37 crop/preview/export acceptance checks and an actual mouse-drag/save/undo workflow check.
+- Add immutable per-user versioned installation, payload hash manifests and isolated installation tests.
+- Require crop, canvas, installation and installed startup/shutdown verification before GitHub publication. Installed and published executable hashes must agree.
+
+Known limits: crop UI and icons are independently drawn and differ from the reference; cropped-object resize anchoring, moving source within the crop region, text crop and dynamic crop animation are not established as equivalent. Full application parity remains unfinished.
+
 ## 0.0.1
 
 - Begin the requested revision sequence: 0.0.1 through 0.0.12, then 0.1.0.

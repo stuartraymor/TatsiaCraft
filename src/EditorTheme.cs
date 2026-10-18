@@ -28,6 +28,7 @@ public partial class Editor {
   else if(kind=="Lock"){d.DrawRoundedRectangle(light,null,new Rect(6,10,12,12),1,1);d.DrawRoundedRectangle(null,pen,new Rect(8,2,8,13),4,4);d.DrawEllipse(panel,null,new Point(12,16),2,2);}
   else if(kind=="Snap"){d.DrawGeometry(null,new Pen(light,4),Geometry.Parse("M5,4 L5,15 C5,23 19,23 19,15 L19,4"));d.DrawLine(new Pen(panel,2),new Point(2,9),new Point(8,9));d.DrawLine(new Pen(panel,2),new Point(16,9),new Point(22,9));}
   else if(kind=="Select"){d.DrawGeometry(light,null,Geometry.Parse("M4,2 L4,20 9,15 13,23 17,21 13,13 21,13 Z"));}
+  else if(kind=="Crop"){d.DrawGeometry(null,pen,Geometry.Parse("M6,1 L6,18 L23,18 M1,6 L18,6 L18,23 M10,10 L14,10 L14,14"));}
   else if(kind=="Pan"){d.DrawGeometry(null,pen,Geometry.Parse("M5,12 L5,18 C5,25 19,25 19,18 L19,9 M5,15 L2,11 M8,15 L8,3 M12,15 L12,1 M16,15 L16,4"));}
  }var image=new DrawingImage(group);image.Freeze();return image;}
  Button IconButton(string label,string kind,Action action){var b=Btn(label,action);b.Content=new Image{Source=ToolPicture(kind),Width=18,Height=18};b.Width=30;b.Height=26;b.Padding=new Thickness(5);b.Margin=new Thickness(1);b.Background=B("#252d33");b.ToolTip=label;AutomationProperties.SetName(b,label);AutomationProperties.SetAutomationId(b,"Tool."+kind);return b;}

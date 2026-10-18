@@ -25,6 +25,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 - Multitrack editing, move/trim/split, copy/paste, undo/redo and JSON projects.
 - Live composition and playback with source effect proxies.
 - Canvas movement, anchored resizing, rotation and independent view zoom up to 2000%.
+- Image/video cropping with live handles and numeric properties, retained source placement and transparent export.
 - Detachable canvas with retained transport, zoom, selection and playhead.
 - Basic text, shapes, transitions, visual/audio presets and SRT import.
 - Desktop, microphone and webcam capture, and MP4 export through FFmpeg.
@@ -46,3 +47,7 @@ This builds and runs the isolated canvas workspace harness on an interactive Win
 `App.cs` coordinates editing and project operations; `EditorUI.cs`, `EditorTheme.cs`, `EditorTimeline.cs`, `EditorHome.cs` and `PaletteUI.cs` build the interface; `LivePreview.cs` implements the live compositor; `Engine.cs` handles project validation and media processing.
 
 Research captures, proprietary assets, installers, media files, local account data and investigation reports are excluded.
+
+## Feature plan and installation
+
+The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries and remaining gaps. [Installation instructions](docs/INSTALLATION.md) explain versioned per-user installs and payload validation. For the crop acceptance suite, run `scripts/test-crop.ps1 -ToolsPath <compatible-tools-directory>`; it checks actual preview and decoded export pixels, save/legacy projects and invalid input.
