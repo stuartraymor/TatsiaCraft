@@ -35,6 +35,7 @@ namespace TasiaCraft {
   readonly ScrollViewer scroller=new ScrollViewer{HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
   Project project; Clip selection; double position,origin; volatile bool disposed; bool editing;
   Point down; double oldX,oldY,oldScale,oldRotation; string gesture;
+  CanvasResizeOperation resizeOperation;
   double oldCropLeft,oldCropTop,oldCropRight,oldCropBottom;
   public bool CropMode {get;private set;}
   readonly TranslateTransform viewTranslation=new TranslateTransform();
@@ -211,7 +212,7 @@ namespace TasiaCraft {
    var rect=new Rectangle{Width=right-left,Height=bottom-top,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=CropMode?Cursors.Arrow:Cursors.SizeAll};Canvas.SetLeft(rect,left);Canvas.SetTop(rect,top);outline.Children.Add(rect);rect.MouseLeftButtonDown+=(s,e)=>StartDrag("move",e);
    bool canCrop=string.IsNullOrEmpty(selection.Text)&&l.Media!=null&&l.Media.Width>0&&l.Media.Height>0;
    foreach(var pos in new[]{new[]{0,0},new[]{1,0},new[]{2,0},new[]{0,1},new[]{2,1},new[]{0,2},new[]{1,2},new[]{2,2}}){
-    int ix=pos[0],iy=pos[1];string kind=CropMode?"crop"+(ix==0?"-left":ix==2?"-right":"")+(iy==0?"-top":iy==2?"-bottom":""):"scale";
+    int ix=pos[0],iy=pos[1];string kind=CropMode?"crop"+(ix==0?"-left":ix==2?"-right":"")+(iy==0?"-top":iy==2?"-bottom":""):"scale-"+ix+"-"+iy;
     if(CropMode&&!canCrop)continue;Shape grip=CropMode?(Shape)new Rectangle():(Shape)new Ellipse();grip.Width=grip.Height=12;grip.Fill=Brushes.White;grip.Stroke=Brushes.DeepSkyBlue;grip.StrokeThickness=2;grip.Cursor=ix==1?Cursors.SizeNS:iy==1?Cursors.SizeWE:ix==iy?Cursors.SizeNWSE:Cursors.SizeNESW;Canvas.SetLeft(grip,(ix==0?left:ix==2?right:(left+right)/2)-6);Canvas.SetTop(grip,(iy==0?top:iy==2?bottom:(top+bottom)/2)-6);outline.Children.Add(grip);grip.MouseLeftButtonDown+=(s,e)=>StartDrag(kind,e);
    }
    if(!CropMode&&string.IsNullOrEmpty(selection.Text)){
@@ -220,12 +221,17 @@ namespace TasiaCraft {
    }
   }
   void StartDrag(string kind,MouseButtonEventArgs e){
-   if(selection==null||Hidden(selection)||Locked(selection)||CropMode&&kind=="move")return;var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;editing=false;Stage.CaptureMouse();e.Handled=true;
+   if(selection==null||Hidden(selection)||Locked(selection)||CropMode&&kind=="move")return;var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;resizeOperation=null;if(kind.StartsWith("scale-")){Layer resizeLayer;if(!layers.TryGetValue(selection.Id,out resizeLayer))return;var parts=kind.Split('-');resizeOperation=new CanvasResizeOperation(selection,resizeLayer.Box.Width,resizeLayer.Box.Height,project.Width,project.Height,int.Parse(parts[1]),int.Parse(parts[2]),down);}editing=false;Stage.CaptureMouse();e.Handled=true;
   }
   void Drag(object sender,MouseEventArgs e){
    if(gesture==null||selection==null||e.LeftButton!=MouseButtonState.Pressed)return;
    if(Hidden(selection)||Locked(selection)){EndDrag(sender,null);return;}
    Point p=e.GetPosition(Stage);if(!editing&&(p-down).Length<2)return;
+   if(gesture.StartsWith("scale-")&&resizeOperation!=null){
+    var result=resizeOperation.Evaluate(p);
+    if(Math.Abs(result.Scale-selection.Scale)<1e-10&&Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){e.Handled=true;return;}
+    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.ApplyTo(selection);Update(false);e.Handled=true;return;
+   }
    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}
    if(gesture.StartsWith("crop")){
     Layer layer;if(!layers.TryGetValue(selection.Id,out layer)||layer.Media==null)return;
@@ -237,16 +243,10 @@ namespace TasiaCraft {
     if(gesture.Contains("top"))selection.CropTop=Math.Max(0,Math.Min(1-oldCropBottom-minY,oldCropTop+uy));
     if(gesture.Contains("bottom"))selection.CropBottom=Math.Max(0,Math.Min(1-oldCropTop-minY,oldCropBottom-uy));
    }else if(gesture=="move"){selection.X=Math.Max(-32768,Math.Min(32768,oldX+p.X-down.X));selection.Y=Math.Max(-32768,Math.Min(32768,oldY+p.Y-down.Y));}
-   else if(gesture=="scale"){
-    Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);
-    Point anchor=new Point(2*center.X-down.X,2*center.Y-down.Y);Vector diagonal=down-anchor;
-    double ratio=Math.Max(.01/oldScale,Math.Min(8/oldScale,Vector.Multiply(p-anchor,diagonal)/Math.Max(1,diagonal.LengthSquared)));
-    selection.Scale=oldScale*ratio;Point next=anchor+(center-anchor)*ratio;
-    selection.X=next.X-project.Width/2.0;selection.Y=next.Y-project.Height/2.0;
-   }else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
+   else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
    Update(false);e.Handled=true;
   }
-  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
+  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
   void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);layers.Remove(id);}
   void ClearLayers(){foreach(string id in layers.Keys.ToArray())Remove(id);}
   public void Dispose(){

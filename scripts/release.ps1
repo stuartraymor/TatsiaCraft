@@ -53,6 +53,7 @@ try {
   if((Get-Item -LiteralPath $preservedApp).VersionInfo.ProductVersion -ne $version){throw 'Preserved release artifact version mismatch'}
   Copy-Item -LiteralPath $preservedApp -Destination 'dist\TasiaCraft\TasiaCraft.exe'
  }else{
+  & (Join-Path $PSScriptRoot 'test-resize.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-pan.ps1')
   & (Join-Path $PSScriptRoot 'test-crop.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-canvas.ps1')

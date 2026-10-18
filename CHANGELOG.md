@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.4
+
+- Correct cropped-media resizing to anchor the opposite visible crop corner or edge midpoint instead of the uncropped source bounds.
+- Preserve proportional sizing, source rotation and crop fractions, including off-center grip clicks.
+- Constrain scale and position while retaining the anchor; avoid new undo checkpoints for scale gestures that do not change the transform.
+- Add independent geometry, actual preview, decoded export and persistence acceptance checks, including the two measured reference gestures.
+- Include the resize suite in the mandatory test/install/publish release gate.
+
+Rotated geometry is independently tested; only unrotated bottom-right and right-middle reference gestures were directly measured in this revision. Modifier-key, animated and perspective resize parity remains open.
+
 ## 0.0.3
 
 - Add a canvas hand tool that pans the workspace without changing clip properties, export geometry, dirty state or undo history.

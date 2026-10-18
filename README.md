@@ -26,6 +26,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 - Live composition and playback with source effect proxies.
 - Canvas movement, anchored resizing, rotation and independent view zoom up to 2000%.
 - Image/video cropping with live handles and numeric properties, retained source placement and transparent export.
+- Cropped-media corner/edge resizing anchored to the opposite visible crop handle.
 - Hand-mode viewport panning with independent clip geometry and Fit recentering.
 - Detachable canvas with retained transport, zoom, selection and playhead.
 - Basic text, shapes, transitions, visual/audio presets and SRT import.
@@ -54,3 +55,5 @@ Research captures, proprietary assets, installers, media files, local account da
 The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries and remaining gaps. [Installation instructions](docs/INSTALLATION.md) explain versioned per-user installs and payload validation. For the crop acceptance suite, run `scripts/test-crop.ps1 -ToolsPath <compatible-tools-directory>`; it checks actual preview and decoded export pixels, save/legacy projects and invalid input.
 
 `scripts/test-pan.ps1` runs 33 viewport, tool-mode and state-preservation checks without external media tools.
+
+`scripts/test-resize.ps1 -ToolsPath <compatible-tools-directory>` checks anchored resize geometry against actual WPF crop bounds, reference measurements, preview/export pixels and persisted projects. See [resize evidence](docs/RESIZE-EVIDENCE.md) for the exact observed behavior and remaining limits.
