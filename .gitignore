@@ -1,0 +1,14 @@
+dist/
+artifacts/
+work/
+tools/
+vendor/
+*.pdb
+*.user
+*.suo
+*.tasiaproj
+*.mp4
+*.wav
+*.trec
+*.tscproj
+.vs/

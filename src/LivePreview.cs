@@ -1,0 +1,232 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Automation;
+using System.Windows.Automation.Peers;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows.Threading;
+namespace TasiaCraft {
+ public sealed class ProjectCanvas : Canvas {
+  protected override AutomationPeer OnCreateAutomationPeer(){return new FrameworkElementAutomationPeer(this);}
+ }
+ // Independent timeline compositor. Playback never renders the timeline to a file.
+ public sealed class LivePreview : UserControl, IDisposable {
+  sealed class Layer {
+   public Clip Clip; public Media Media; public Border Box; public MediaElement Decoder;
+   public FrameworkElement Visual; public bool Ready,Failed,Running,Active; public double Width,Height; public string SourceKey; public double Gain=1; public int Z;
+  }
+  readonly Dictionary<string,Layer> layers=new Dictionary<string,Layer>();
+  readonly Dictionary<string,Task<string>> proxies=new Dictionary<string,Task<string>>();
+  readonly Dictionary<Process,string> proxyProcesses=new Dictionary<Process,string>();
+  readonly DispatcherTimer timer=new DispatcherTimer(); readonly Stopwatch watch=new Stopwatch();
+  readonly Canvas handles=new Canvas{IsHitTestVisible=true};
+  readonly Viewbox viewport=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly};
+  readonly ScrollViewer scroller=new ScrollViewer{HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
+  Project project; Clip selection; double position,origin; volatile bool disposed; bool editing;
+  Point down; double oldX,oldY,oldScale,oldRotation; string gesture;
+  public Canvas Stage {get;private set;}
+  public double ViewZoom {get;private set;}
+  public double Position {get{return position;}}
+  public bool IsPlaying {get;private set;}
+  public event Action<double> PositionChanged;
+  public event Action<string> Status;
+  public event Action<Clip> Selecting;
+  public event Action BeforeEdit,AfterEdit;
+  public LivePreview() {
+   Stage=new ProjectCanvas{Width=1280,Height=720,Background=Brushes.Black,ClipToBounds=false};
+   AutomationProperties.SetAutomationId(Stage,"ProjectCanvas");AutomationProperties.SetName(Stage,"Project canvas");
+   viewport.Child=Stage;viewport.ClipToBounds=false;Content=viewport;Background=Brushes.Transparent;ClipToBounds=true;
+   Loaded+=(s,e)=>SetViewZoom(ViewZoom);
+   Stage.Children.Add(handles); Panel.SetZIndex(handles,int.MaxValue);
+   Stage.MouseLeftButtonDown+=(s,e)=>{if(e.OriginalSource==Stage){SetSelection(null);if(Selecting!=null)Selecting(null);}};
+   Stage.MouseMove+=Drag; Stage.MouseLeftButtonUp+=EndDrag; Stage.LostMouseCapture+=(s,e)=>EndDrag(s,null);
+   timer.Interval=TimeSpan.FromMilliseconds(1000.0/30);timer.Tick+=(s,e)=>Tick();
+  }
+  void Say(string message){if(Status!=null)Status(message);}
+  bool Hidden(Clip clip){return project!=null&&project.HiddenTracks!=null&&project.HiddenTracks.Contains(clip.Track);}
+  bool Locked(Clip clip){return project!=null&&project.LockedTracks!=null&&project.LockedTracks.Contains(clip.Track);}
+  double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
+  public void SetProject(Project value){
+   bool resume=IsPlaying;Pause();
+   if(!object.ReferenceEquals(project,value)){ClearLayers();project=value;}
+   if(project==null){position=0;handles.Children.Clear();return;}
+   Stage.Width=project.Width;Stage.Height=project.Height;
+   SetViewZoom(ViewZoom);
+   var keep=new HashSet<string>(project.Clips.Select(c=>c.Id));
+   foreach(string id in layers.Keys.Where(id=>!keep.Contains(id)||!object.ReferenceEquals(layers[id].Clip,project.Clips.First(c=>c.Id==id))||layers[id].Media!=project.Media.FirstOrDefault(m=>m.Id==layers[id].Clip.MediaId)).ToArray())Remove(id);
+   Seek(position);if(resume)Play();
+  }
+  public void SetSelection(Clip value){selection=value;DrawHandles();}
+  // Viewport magnification never mutates clip transforms or export geometry.
+  public void SetViewZoom(double zoom){
+   ViewZoom=double.IsNaN(zoom)?0:Math.Max(0,Math.Min(20,zoom));
+   double dpiX=1,dpiY=1;var source=PresentationSource.FromVisual(this);if(source!=null&&source.CompositionTarget!=null){dpiX=source.CompositionTarget.TransformToDevice.M11;dpiY=source.CompositionTarget.TransformToDevice.M22;}
+   if(ViewZoom==0){scroller.Content=null;Content=null;viewport.Width=double.NaN;viewport.Height=double.NaN;viewport.MaxWidth=Stage.Width/dpiX;viewport.MaxHeight=Stage.Height/dpiY;viewport.StretchDirection=StretchDirection.DownOnly;Content=viewport;}
+   else{Content=null;scroller.Content=null;viewport.MaxWidth=double.PositiveInfinity;viewport.MaxHeight=double.PositiveInfinity;viewport.StretchDirection=StretchDirection.Both;viewport.Width=Stage.Width*ViewZoom/dpiX;viewport.Height=Stage.Height*ViewZoom/dpiY;scroller.Content=viewport;Content=scroller;}
+  }
+  public void Refresh(){Update(true);}
+  public void Seek(double time){
+   position=Math.Max(0,Math.Min(Length(),double.IsNaN(time)?0:time));origin=position;watch.Restart();
+   Update(true);if(PositionChanged!=null)PositionChanged(position);
+  }
+  public void Play(){if(disposed||project==null||Length()<=0)return;if(position>=Length()-.01)position=0;origin=position;watch.Restart();IsPlaying=true;timer.Start();Update(true);Say("Playing live timeline");}
+  public void Pause(){if(IsPlaying){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);IsPlaying=false;watch.Stop();}timer.Stop();foreach(var l in layers.Values)if(l.Decoder!=null){l.Decoder.Pause();l.Running=false;}DrawHandles();}
+  void Tick(){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);Update(false);if(PositionChanged!=null)PositionChanged(position);if(position>=Length()){Pause();Say("Playback finished");}}
+  Layer Create(Clip clip){
+   var layer=new Layer{Clip=clip,Media=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId)};
+   layer.SourceKey=SourceKey(clip,layer.Media);
+   layer.Box=new Border{Background=Brushes.Transparent,RenderTransformOrigin=new Point(.5,.5)};
+   layer.Box.MouseLeftButtonDown+=(s,e)=>{SetSelection(clip);if(Selecting!=null)Selecting(clip);StartDrag("move",e);};
+   Stage.Children.Add(layer.Box);layers[clip.Id]=layer;
+   if(!string.IsNullOrEmpty(clip.Text)){
+    var text=new TextBlock{Text=clip.Text,FontFamily=new FontFamily("Arial"),FontSize=48,Foreground=Brushes.White,TextWrapping=TextWrapping.NoWrap};
+    text.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));layer.Width=text.DesiredSize.Width;layer.Height=text.DesiredSize.Height;layer.Visual=text;layer.Box.Child=text;layer.Ready=true;
+   }else if(layer.Media!=null){
+    if(NeedsProxy(clip,layer.Media))BeginProxy(layer);else OpenSource(layer,layer.Media.Path);
+   }
+   return layer;
+  }
+  static bool NeedsProxy(Clip c,Media m){return !string.IsNullOrEmpty(c.Effect)||m.HasAudio&&(!string.IsNullOrEmpty(c.AudioEffect)||c.Volume>1);}
+  static string SourceKey(Clip c,Media m){return m==null?"text":m.Path+"|"+File.GetLastWriteTimeUtc(m.Path).Ticks+"|"+c.Effect+"|"+c.AudioEffect+"|"+(c.Volume>1?c.Volume:1).ToString(System.Globalization.CultureInfo.InvariantCulture);}
+  void RunProxy(string args,string temp){
+   var process=new Process{StartInfo=new ProcessStartInfo(Engine.Tool("ffmpeg"),"-nostdin "+args){UseShellExecute=false,CreateNoWindow=true,RedirectStandardOutput=true,RedirectStandardError=true}};
+   var errors=new StringBuilder();process.ErrorDataReceived+=(s,e)=>{if(e.Data!=null)lock(errors){errors.AppendLine(e.Data);if(errors.Length>12000)errors.Remove(0,errors.Length-12000);}};
+   try{
+    lock(proxyProcesses){if(disposed)throw new OperationCanceledException("Preview closed");process.Start();proxyProcesses.Add(process,temp);}
+    process.BeginErrorReadLine();process.StandardOutput.ReadToEnd();process.WaitForExit();
+    if(disposed)throw new OperationCanceledException("Preview closed");
+    if(process.ExitCode!=0)throw new Exception("Source preview processing failed: "+errors.ToString());
+   }finally{lock(proxyProcesses)proxyProcesses.Remove(process);process.Dispose();}
+  }
+  async void BeginProxy(Layer layer){
+   string key=layer.SourceKey;Media media=layer.Media;Clip c=layer.Clip;
+   string effect=c.Effect,audio=c.AudioEffect;double gain=c.Volume>1?c.Volume:1;layer.Gain=gain;
+   Task<string> task;
+   lock(proxies){if(!proxies.TryGetValue(key,out task)){
+    task=Task.Run(()=>{
+     if(disposed)throw new OperationCanceledException("Preview closed");
+     string hash;using(var sha=SHA256.Create())hash=BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(key))).Replace("-","");
+     string folder=System.IO.Path.Combine(System.IO.Path.GetTempPath(),"TasiaCraft-source-preview");Directory.CreateDirectory(folder);
+     string output=System.IO.Path.Combine(folder,hash+(media.Kind=="image"?".png":media.Kind=="audio"?".wav":".mp4"));
+     if(File.Exists(output))return output;
+     string temp=System.IO.Path.Combine(folder,hash+"-"+Guid.NewGuid().ToString("N")+System.IO.Path.GetExtension(output));
+     string vf=effect=="grayscale"?"hue=s=0":effect=="blur"?"gblur=sigma=5":effect=="sharpen"?"unsharp":null;
+     string af=audio=="normalize"?"loudnorm":audio=="noise reduction"?"afftdn":"anull";
+     if(gain>1)af+=",volume="+gain.ToString(System.Globalization.CultureInfo.InvariantCulture);
+     string args="-hide_banner -y -v error -threads 1 -i "+Engine.Quote(media.Path)+(vf==null?"":" -vf "+vf);
+     if(media.Kind=="image")args+=" -frames:v 1 -threads 1";
+     else if(media.Kind=="audio")args+=" -vn -af "+af+" -c:a pcm_s16le";
+     else args+=" -c:v libopenh264 -b:v 6M -pix_fmt yuv420p"+(media.HasAudio?" -af "+af+" -c:a aac -b:a 192k":" -an")+" -movflags +faststart";
+     try{RunProxy(args+" "+Engine.Quote(temp),temp);if(disposed)throw new OperationCanceledException("Preview closed");try{File.Move(temp,output);}catch(IOException){if(!File.Exists(output))throw;}return output;}finally{try{if(File.Exists(temp))File.Delete(temp);}catch(IOException){}}
+    });proxies[key]=task;
+   }}
+   Say("Preparing source effect preview: "+media.Name);
+   try{string path=await task;if(disposed||!layers.ContainsKey(c.Id)||!object.ReferenceEquals(layers[c.Id],layer))return;OpenSource(layer,path);Apply(layer,true);DrawHandles();Say("Source effect preview ready: "+media.Name);}
+   catch(Exception ex){layer.Failed=true;lock(proxies)proxies.Remove(key);if(!disposed)Say("Source effect preview failed: "+ex.Message);}
+  }
+  void OpenSource(Layer layer,string path){
+   Clip clip=layer.Clip;
+   if(layer.Media.Kind=="image"){
+    try{var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.UriSource=new Uri(path);bitmap.EndInit();bitmap.Freeze();layer.Width=bitmap.PixelWidth;layer.Height=bitmap.PixelHeight;layer.Visual=new Image{Source=bitmap,Stretch=Stretch.Fill};layer.Box.Child=layer.Visual;layer.Ready=true;}catch(Exception ex){layer.Failed=true;Say("Image preview failed: "+ex.Message);}
+   }else{
+    layer.Width=layer.Media.Width;layer.Height=layer.Media.Height;
+    var decoder=new MediaElement{LoadedBehavior=MediaState.Manual,UnloadedBehavior=MediaState.Manual,Stretch=Stretch.Fill,Volume=0,ScrubbingEnabled=true};
+    layer.Decoder=decoder;layer.Visual=decoder;layer.Box.Child=decoder;
+    decoder.MediaOpened+=(s,e)=>{if(disposed||!layers.ContainsKey(clip.Id)||!object.ReferenceEquals(layers[clip.Id],layer))return;layer.Ready=true;if(decoder.NaturalVideoWidth>0){layer.Width=decoder.NaturalVideoWidth;layer.Height=decoder.NaturalVideoHeight;}decoder.Pause();layer.Running=false;Apply(layer,true);DrawHandles();};
+    decoder.MediaFailed+=(s,e)=>{layer.Failed=true;Say("Live decoder cannot open "+layer.Media.Name+": "+e.ErrorException.Message+". Export may support this format.");};
+    try{decoder.Source=new Uri(path);decoder.Play();decoder.Pause();}catch(Exception ex){layer.Failed=true;Say("Live preview failed: "+ex.Message);}
+   }
+  }
+  void Update(bool seek){
+   if(disposed||project==null)return;
+   int z=0;foreach(var c in project.Clips.OrderBy(c=>c.Track).ThenBy(c=>c.Start)){
+    int order=z++;
+    if(Hidden(c)){if(layers.ContainsKey(c.Id))Remove(c.Id);continue;}
+    bool active=position>=c.Start&&position<c.Start+c.Duration;
+    Layer l;if(layers.TryGetValue(c.Id,out l)&&l.SourceKey!=SourceKey(c,project.Media.FirstOrDefault(m=>m.Id==c.MediaId))){Remove(c.Id);l=null;}
+    if(l==null){if(!active&&!(IsPlaying&&c.Start>position&&c.Start-position<.6))continue;l=Create(c);}
+    l.Z=order;l.Active=active;Apply(l,seek);
+   }
+   // Release remote decoders to bound memory for large projects. The next clip is preopened.
+   foreach(string id in layers.Keys.Where(id=>layers[id].Decoder!=null&&!layers[id].Active&&Math.Abs(layers[id].Clip.Start-position)>8).ToArray())Remove(id);
+   DrawHandles();
+  }
+  static double Fade(Clip c,double t){double a=1;if(c.FadeIn>0)a*=Math.Min(1,Math.Max(0,t/c.FadeIn));if(c.FadeOut>0)a*=Math.Min(1,Math.Max(0,(c.Duration-t)/c.FadeOut));return a;}
+  void Apply(Layer l,bool seek){
+   var c=l.Clip;double elapsed=Math.Max(0,Math.Min(c.Duration,position-c.Start));double k=c.Animate?elapsed/c.Duration:0;
+   double scale=c.Scale+(c.EndScale-c.Scale)*k,x=c.X+(c.EndX-c.X)*k,y=c.Y+(c.EndY-c.Y)*k;
+   double w=l.Width>0?l.Width:project.Width,h=l.Height>0?l.Height:project.Height;
+   bool text=!string.IsNullOrEmpty(c.Text),audio=l.Media!=null&&l.Media.Kind=="audio";
+   if(text){var tb=(TextBlock)l.Visual;if(tb.Text!=c.Text){tb.Text=c.Text;tb.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));l.Width=tb.DesiredSize.Width;l.Height=tb.DesiredSize.Height;w=l.Width;h=l.Height;}}
+   if(!text&&!c.NativeSize){double fit=Math.Min(project.Width/w,project.Height/h);w*=fit;h*=fit;}
+   l.Box.Width=audio?1:w;l.Box.Height=audio?1:h;
+   Canvas.SetLeft(l.Box,(project.Width-w)/2+x);Canvas.SetTop(l.Box,(project.Height-h)/2+y);
+   var transforms=new TransformGroup();transforms.Children.Add(new ScaleTransform(scale,scale));transforms.Children.Add(new RotateTransform(text?0:c.Rotation));l.Box.RenderTransform=transforms;
+   Panel.SetZIndex(l.Box,l.Z);
+   l.Box.Opacity=l.Active&&!audio?Math.Max(0,Math.Min(1,c.Opacity))*Fade(c,elapsed):0;
+   l.Box.IsHitTestVisible=l.Active&&!audio;
+   if(l.Decoder!=null&&l.Ready&&!l.Failed){
+    var d=l.Decoder;double target=c.In+elapsed*c.Speed;
+    d.SpeedRatio=c.Speed;d.Volume=l.Active?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed))):0;
+    if(seek||!l.Running||Math.Abs(d.Position.TotalSeconds-target)>.22)d.Position=TimeSpan.FromSeconds(target);
+    if(IsPlaying&&l.Active){if(!l.Running){d.Play();l.Running=true;}}else if(l.Running){d.Pause();l.Running=false;}
+   }
+  }
+  void DrawHandles(){
+   handles.Children.Clear();if(project==null||selection==null||IsPlaying||Hidden(selection)||Locked(selection))return;
+   Layer l;if(!layers.TryGetValue(selection.Id,out l)||!l.Active||l.Media!=null&&l.Media.Kind=="audio")return;
+   double elapsed=Math.Max(0,Math.Min(selection.Duration,position-selection.Start)),k=selection.Animate?elapsed/selection.Duration:0;
+   double scale=selection.Scale+(selection.EndScale-selection.Scale)*k,w=l.Box.Width*scale,h=l.Box.Height*scale;
+   double cx=project.Width/2.0+selection.X+(selection.EndX-selection.X)*k,cy=project.Height/2.0+selection.Y+(selection.EndY-selection.Y)*k;
+   double rotation=string.IsNullOrEmpty(selection.Text)?selection.Rotation:0;
+   var outline=new Canvas{Width=w,Height=h,RenderTransform=new RotateTransform(rotation,w/2,h/2)};
+   Canvas.SetLeft(outline,cx-w/2);Canvas.SetTop(outline,cy-h/2);handles.Children.Add(outline);
+   var rect=new Rectangle{Width=w,Height=h,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=Cursors.SizeAll};outline.Children.Add(rect);rect.MouseLeftButtonDown+=(s,e)=>StartDrag("move",e);
+   foreach(var p in new[]{new Point(0,0),new Point(w/2,0),new Point(w,0),new Point(0,h/2),new Point(w,h/2),new Point(0,h),new Point(w/2,h),new Point(w,h)}){
+    var grip=new Ellipse{Width=12,Height=12,Fill=Brushes.White,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Cursor=Cursors.SizeNWSE};Canvas.SetLeft(grip,p.X-6);Canvas.SetTop(grip,p.Y-6);outline.Children.Add(grip);grip.MouseLeftButtonDown+=(s,e)=>StartDrag("scale",e);
+   }
+   if(string.IsNullOrEmpty(selection.Text)){
+    var stem=new Line{X1=w,Y1=h/2,X2=w+28,Y2=h/2,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,IsHitTestVisible=false};outline.Children.Add(stem);
+    var rotate=new Ellipse{Width=14,Height=14,Fill=Brushes.White,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Cursor=Cursors.Hand};Canvas.SetLeft(rotate,w+21);Canvas.SetTop(rotate,h/2-7);outline.Children.Add(rotate);rotate.MouseLeftButtonDown+=(s,e)=>StartDrag("rotate",e);
+   }
+  }
+  void StartDrag(string kind,MouseButtonEventArgs e){
+   if(selection==null||Hidden(selection)||Locked(selection))return;var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;editing=false;Stage.CaptureMouse();e.Handled=true;
+  }
+  void Drag(object sender,MouseEventArgs e){
+   if(gesture==null||selection==null||e.LeftButton!=MouseButtonState.Pressed)return;
+   if(Hidden(selection)||Locked(selection)){EndDrag(sender,null);return;}
+   Point p=e.GetPosition(Stage);if(!editing&&(p-down).Length<2)return;
+   if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}
+   if(gesture=="move"){selection.X=Math.Max(-32768,Math.Min(32768,oldX+p.X-down.X));selection.Y=Math.Max(-32768,Math.Min(32768,oldY+p.Y-down.Y));}
+   else if(gesture=="scale"){
+    Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);
+    Point anchor=new Point(2*center.X-down.X,2*center.Y-down.Y);Vector diagonal=down-anchor;
+    double ratio=Math.Max(.01/oldScale,Math.Min(8/oldScale,Vector.Multiply(p-anchor,diagonal)/Math.Max(1,diagonal.LengthSquared)));
+    selection.Scale=oldScale*ratio;Point next=anchor+(center-anchor)*ratio;
+    selection.X=next.X-project.Width/2.0;selection.Y=next.Y-project.Height/2.0;
+   }else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
+   Update(false);e.Handled=true;
+  }
+  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
+  void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);layers.Remove(id);}
+  void ClearLayers(){foreach(string id in layers.Keys.ToArray())Remove(id);}
+  public void Dispose(){
+   KeyValuePair<Process,string>[] running;
+   lock(proxyProcesses){if(disposed)return;disposed=true;running=proxyProcesses.ToArray();foreach(var pair in running)try{if(!pair.Key.HasExited)pair.Key.Kill();}catch(InvalidOperationException){}catch(System.ComponentModel.Win32Exception){}}
+   foreach(var pair in running){try{pair.Key.WaitForExit(1000);}catch(InvalidOperationException){}try{if(File.Exists(pair.Value))File.Delete(pair.Value);}catch(IOException){}catch(UnauthorizedAccessException){}}
+   Pause();timer.Stop();ClearLayers();handles.Children.Clear();
+  }
+ }
+}
