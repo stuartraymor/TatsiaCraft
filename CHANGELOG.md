@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.5
+
+- Subdue media extending beyond the project rectangle during canvas editing while leaving the project interior bright.
+- Keep selection grips above the shade and preserve click-through editing of overflow.
+- Follow viewport pan/zoom, workspace resize and project-size changes without changing document or source data.
+- Verify that project-sized frame rendering and exported video pixels remain undimmed.
+- Add44 independent display, state-preservation and export checks to the release gate.
+
+The shade color/opacity is an independent dark-theme design choice; exact reference alpha, HDR/color management and complete display-style parity remain unverified.
+
 ## 0.0.4
 
 - Correct cropped-media resizing to anchor the opposite visible crop corner or edge midpoint instead of the uncropped source bounds.

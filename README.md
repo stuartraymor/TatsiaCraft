@@ -28,6 +28,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 - Image/video cropping with live handles and numeric properties, retained source placement and transparent export.
 - Cropped-media corner/edge resizing anchored to the opposite visible crop handle.
 - Hand-mode viewport panning with independent clip geometry and Fit recentering.
+- Subdued off-canvas editing overflow with bright selection grips and unchanged export pixels.
 - Detachable canvas with retained transport, zoom, selection and playhead.
 - Basic text, shapes, transitions, visual/audio presets and SRT import.
 - Desktop, microphone and webcam capture, and MP4 export through FFmpeg.
@@ -57,3 +58,5 @@ The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries
 `scripts/test-pan.ps1` runs 33 viewport, tool-mode and state-preservation checks without external media tools.
 
 `scripts/test-resize.ps1 -ToolsPath <compatible-tools-directory>` checks anchored resize geometry against actual WPF crop bounds, reference measurements, preview/export pixels and persisted projects. See [resize evidence](docs/RESIZE-EVIDENCE.md) for the exact observed behavior and remaining limits.
+
+`scripts/test-offcanvas.ps1 -ToolsPath <compatible-tools-directory>` checks display shading, viewport changes, selection visibility and undimmed frame/video exports. Its reference and coverage boundaries are in [off-canvas evidence](docs/OFF-CANVAS-EVIDENCE.md).

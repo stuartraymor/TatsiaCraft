@@ -31,6 +31,7 @@ namespace TasiaCraft {
   readonly Dictionary<Process,string> proxyProcesses=new Dictionary<Process,string>();
   readonly DispatcherTimer timer=new DispatcherTimer(); readonly Stopwatch watch=new Stopwatch();
   readonly Canvas handles=new Canvas{IsHitTestVisible=true};
+  readonly OffCanvasShade offCanvasShade=new OffCanvasShade();
   readonly Viewbox viewport=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly};
   readonly ScrollViewer scroller=new ScrollViewer{HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
   Project project; Clip selection; double position,origin; volatile bool disposed; bool editing;
@@ -42,7 +43,7 @@ namespace TasiaCraft {
   bool panning;Point panDown;Vector panOrigin;
   public bool PanMode {get;private set;}
   public Vector ViewOffset {get{return new Vector(viewTranslation.X,viewTranslation.Y);}}
-  public void SetViewOffset(double x,double y){if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y))throw new ArgumentException("Viewport offset must be finite");viewTranslation.X=Math.Max(-32768,Math.Min(32768,x));viewTranslation.Y=Math.Max(-32768,Math.Min(32768,y));}
+  public void SetViewOffset(double x,double y){if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y))throw new ArgumentException("Viewport offset must be finite");viewTranslation.X=Math.Max(-32768,Math.Min(32768,x));viewTranslation.Y=Math.Max(-32768,Math.Min(32768,y));UpdateOffCanvasShade();}
   public void ResetViewOffset(){SetViewOffset(0,0);}
   public void SetPanMode(bool enabled){EndDrag(this,null);PanMode=enabled;if(enabled)CropMode=false;panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Cursor=enabled?Cursors.Hand:Cursors.Arrow;DrawHandles();Say(enabled?"Pan: drag the workspace; clip properties and export stay unchanged":"Select canvas");}
   public Canvas Stage {get;private set;}
@@ -63,11 +64,22 @@ namespace TasiaCraft {
    LostMouseCapture+=(s,e)=>{if(e.OriginalSource==this)panning=false;};
    Loaded+=(s,e)=>SetViewZoom(ViewZoom);
    Stage.Children.Add(handles); Panel.SetZIndex(handles,int.MaxValue);
+   Stage.Children.Add(offCanvasShade);Panel.SetZIndex(offCanvasShade,int.MaxValue-1);
+   LayoutUpdated+=(s,e)=>UpdateOffCanvasShade();SizeChanged+=(s,e)=>UpdateOffCanvasShade();scroller.ScrollChanged+=(s,e)=>UpdateOffCanvasShade();
    Stage.MouseLeftButtonDown+=(s,e)=>{if(e.OriginalSource==Stage){SetSelection(null);if(Selecting!=null)Selecting(null);}};
    Stage.MouseMove+=Drag; Stage.MouseLeftButtonUp+=EndDrag; Stage.LostMouseCapture+=(s,e)=>EndDrag(s,null);
    timer.Interval=TimeSpan.FromMilliseconds(1000.0/30);timer.Tick+=(s,e)=>Tick();
   }
   void Say(string message){if(Status!=null)Status(message);}
+  void UpdateOffCanvasShade(){
+   if(disposed||Stage==null)return;
+   if(project==null||ActualWidth<=0||ActualHeight<=0){offCanvasShade.Visibility=Visibility.Collapsed;return;}
+   try{
+    var bounds=TransformToDescendant(Stage).TransformBounds(new Rect(0,0,ActualWidth,ActualHeight));
+    offCanvasShade.Width=Stage.Width;offCanvasShade.Height=Stage.Height;
+    offCanvasShade.UpdateBounds(bounds,new Rect(0,0,Stage.Width,Stage.Height));offCanvasShade.Visibility=Visibility.Visible;
+   }catch(InvalidOperationException){offCanvasShade.Visibility=Visibility.Collapsed;}
+  }
   bool Hidden(Clip clip){return project!=null&&project.HiddenTracks!=null&&project.HiddenTracks.Contains(clip.Track);}
   bool Locked(Clip clip){return project!=null&&project.LockedTracks!=null&&project.LockedTracks.Contains(clip.Track);}
   double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
@@ -89,6 +101,7 @@ namespace TasiaCraft {
    double dpiX=1,dpiY=1;var source=PresentationSource.FromVisual(this);if(source!=null&&source.CompositionTarget!=null){dpiX=source.CompositionTarget.TransformToDevice.M11;dpiY=source.CompositionTarget.TransformToDevice.M22;}
    if(ViewZoom==0){scroller.Content=null;Content=null;viewport.Width=double.NaN;viewport.Height=double.NaN;viewport.MaxWidth=Stage.Width/dpiX;viewport.MaxHeight=Stage.Height/dpiY;viewport.StretchDirection=StretchDirection.DownOnly;Content=viewport;}
    else{Content=null;scroller.Content=null;viewport.MaxWidth=double.PositiveInfinity;viewport.MaxHeight=double.PositiveInfinity;viewport.StretchDirection=StretchDirection.Both;viewport.Width=Stage.Width*ViewZoom/dpiX;viewport.Height=Stage.Height*ViewZoom/dpiY;scroller.Content=viewport;Content=scroller;}
+   UpdateOffCanvasShade();
   }
   public void Refresh(){Update(true);}
   public void Seek(double time){
@@ -253,7 +266,7 @@ namespace TasiaCraft {
    KeyValuePair<Process,string>[] running;
    lock(proxyProcesses){if(disposed)return;disposed=true;running=proxyProcesses.ToArray();foreach(var pair in running)try{if(!pair.Key.HasExited)pair.Key.Kill();}catch(InvalidOperationException){}catch(System.ComponentModel.Win32Exception){}}
    foreach(var pair in running){try{pair.Key.WaitForExit(1000);}catch(InvalidOperationException){}try{if(File.Exists(pair.Value))File.Delete(pair.Value);}catch(IOException){}catch(UnauthorizedAccessException){}}
-   panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Pause();timer.Stop();ClearLayers();handles.Children.Clear();
+   panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Pause();timer.Stop();ClearLayers();handles.Children.Clear();offCanvasShade.Visibility=Visibility.Collapsed;
   }
  }
 }
