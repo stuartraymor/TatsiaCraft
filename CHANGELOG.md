@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.10
+
+- Rename complete groups from properties, Edit and timeline context menus, with an owned Rename/Cancel dialog and visible validation errors.
+- Support trimmed Unicode names up to 200 characters. Protect locked members and ambiguous selections; unchanged, cancelled and invalid names leave undo and dirty state untouched.
+- Preserve group/member identities, timing, geometry and output, with one-step undo/redo and saved names. Clip long labels within timeline blocks and retain the full name in the tooltip.
+- Add 37 naming checks (223 grouping checks total), including exact preview/decoded export and save/reopen. Exact reference dialog behavior and nested groups remain open.
+
+
 ## 0.0.9
 
 - Select multiple clips with Ctrl/Shift-click or Ctrl+A; group with Ctrl+G and ungroup with Ctrl+U. Display collapsed group blocks with Open group and Main Timeline member editing.

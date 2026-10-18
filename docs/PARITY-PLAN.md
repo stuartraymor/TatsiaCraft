@@ -53,7 +53,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 
 - 0.0.8 increment: project-save robustness repair. [PROJECT-SAVE-EVIDENCE.md](PROJECT-SAVE-EVIDENCE.md) records the original UI failure, controlled pre-fix sharing violation, bounded atomic-commit retry and failed Save As state protection. 60 checks cover real temporary/permanent locks, original bytes, cleanup, Unicode paths, source protection, save/reopen/export and editor destination/dirty/title state. No reference save internals are claimed.
 
-Next unmet canvas acceptance checks: rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. Project-save crash recovery, concurrent multi-process saves and network-filesystem behavior remain open. No entire workstream is marked complete by these increments.
+Next unmet canvas acceptance checks: rotated/animated reference interactions, expanded multi-selection gestures and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. Project-save crash recovery, concurrent multi-process saves and network-filesystem behavior remain open. No entire workstream is marked complete by these increments.
 
 Crop-specific residuals: modifier keys, full rotated/animated reference resize parity, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
 
@@ -69,3 +69,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 
 
 - 0.0.9 increment: flat multi-selection/grouping, Ctrl+A/G/U, collapsed root timeline units, Open group/Main Timeline member context, unit canvas/timeline moves, batch clipboard/delete and group-aware undo/save. [GROUPING-EVIDENCE.md](GROUPING-EVIDENCE.md) records live reference observations and retained REA coverage limits. Nested groups, local group timelines, group effects/resize/rotation, marquee and exact modifier/layout parity remain open. Duplication retains the independent editor's after-selection placement; observed reference duplicate track placement is not reproduced yet. Member editing retains absolute project time/tracks. No full workstream parity is claimed.
+
+
+- 0.0.10 increment: group naming through properties, Edit and timeline context menu, owned Rename/Cancel dialog, guarded Unicode names, no-op/invalid state protection and one-checkpoint undo/save. [GROUP-RENAME-EVIDENCE.md](GROUP-RENAME-EVIDENCE.md) distinguishes the observed reference menu entry from independent dialog/validation choices. 37 additional checks (grouping suite223) verify name-only mutation, preview/export preservation and error/undo/save behavior. Nested hierarchy, group transforms/effects and exact reference rename-dialog/shortcut behavior remain open.

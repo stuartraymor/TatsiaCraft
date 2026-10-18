@@ -60,6 +60,12 @@ namespace TasiaCraft {
    var group=new ClipGroup{Name=name,ClipIds=selected.Select(c=>c.Id).ToList()};
    project.Groups.Add(group);return group;
   }
+  public static bool Rename(Project project,string groupId,string name){
+   Validate(project);var group=project.Groups.FirstOrDefault(g=>g.Id==groupId);if(group==null)throw new ArgumentException("Choose an existing group.");
+   name=(name??"").Trim();if(name.Length==0||name.Length>200)throw new ArgumentException("Use a group name containing 1 to 200 characters.");
+   if(project.Clips.Any(c=>group.ClipIds.Contains(c.Id)&&project.LockedTracks.Contains(c.Track)))throw new InvalidOperationException("Unlock every member track before renaming the group.");
+   if(group.Name==name)return false;group.Name=name;return true;
+  }
   public static bool Ungroup(Project project,IEnumerable<Clip> members){
    Validate(project);var selected=new HashSet<string>(Canonical(project,members).Select(c=>c.Id));
    var groups=project.Groups.Where(g=>g.ClipIds.Any(selected.Contains)).ToList();if(groups.Count==0)return false;
