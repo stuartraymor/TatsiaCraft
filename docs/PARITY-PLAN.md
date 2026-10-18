@@ -30,7 +30,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | 10 | Recorder screen/region/window, camera, mic, system audio | Basic FFmpeg capture | Pause/resume, simultaneous sources, device loss, long sessions, separate tracks, timing |
 | 11 | Cursor recording metadata and cursor effects | Open | Metadata capture, highlighting, smoothing, click effects and zoomed output |
 | 12 | Captions/transcription and text workflows | SRT import only | Editing/timing/styles, caption formats, recognition quality, language and offline behavior |
-| 13 | Projects, autosave/recovery, portable media, compatibility | JSON projects; native formats open | Atomic writes, missing/corrupt files, legacy data, recovery, media embedding, .tscproj/.trec research |
+| 13 | Projects, autosave/recovery, portable media, compatibility | JSON projects; bounded Windows lock recovery and transactional Save As tested; native formats open | Atomic writes, missing/corrupt files, legacy data, recovery, media embedding, .tscproj/.trec research |
 | 14 | Export, formats/profiles/quality/hardware/queue | Basic MP4 | All settings, duration/frame/audio/pixels, cancel/failure/source preservation, batch/retry |
 | 15 | Interactive hotspots/quizzes/Smart Player | Open | Browser/player behavior, metadata, accessibility and distribution |
 | 16 | AI tools, integrations, cloud and external services | Open; service behavior cannot be inferred from local code alone | Current actual availability, local/service alternatives, quality and failure modes |
@@ -51,7 +51,9 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 
 - 0.0.7 increment: anchored resize snapping with the shared canvas setting, active visual layer targets and transient guides. [RESIZE-SNAP-EVIDENCE.md](RESIZE-SNAP-EVIDENCE.md) records the measured enabled/disabled side-handle comparison and remaining limits.445 checks cover every handle under cropped/rotated/native/fitted geometry, source/anchor preservation, zoom thresholds, preview/export and save/reopen.
 
-Next unmet canvas acceptance checks: rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. No entire workstream is marked complete by these increments.
+- 0.0.8 increment: project-save robustness repair. [PROJECT-SAVE-EVIDENCE.md](PROJECT-SAVE-EVIDENCE.md) records the original UI failure, controlled pre-fix sharing violation, bounded atomic-commit retry and failed Save As state protection. 60 checks cover real temporary/permanent locks, original bytes, cleanup, Unicode paths, source protection, save/reopen/export and editor destination/dirty/title state. No reference save internals are claimed.
+
+Next unmet canvas acceptance checks: rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. Project-save crash recovery, concurrent multi-process saves and network-filesystem behavior remain open. No entire workstream is marked complete by these increments.
 
 Crop-specific residuals: modifier keys, full rotated/animated reference resize parity, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
 

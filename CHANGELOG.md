@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.8
+
+- Recover automatically from short-lived Windows sharing/lock errors while committing a project save. Retry only three known HRESULTs, with five attempts and at most 1.5 seconds of retry delay; persistent and unrelated errors still report failure.
+- Keep validated same-directory temporary writes and atomic replacement. Never truncate or delete the previous project as a fallback.
+- Commit Save As path, dirty state and versioned title only after saving succeeds, preserving the previous destination and edits on failure.
+- Add 60 regression checks for real temporary/permanent locks, original-byte preservation, temporary-file cleanup, Unicode paths, source protection, Save As state and decoded export after recovery.
+- This is an independent robustness repair; crash/power-loss recovery, network filesystems and reference save internals remain unverified.
+
 ## 0.0.7
 
 - Apply canvas snapping to resize handles while retaining uniform scale, the opposite visible crop anchor and source crop/rotation values.

@@ -66,3 +66,5 @@ Canvas crop mode supports dragging source media beneath a fixed crop frame. Canv
 Focused checks: `scripts/test-cropmove.ps1 -ToolsPath <tools>` and `scripts/test-alignment.ps1 -ToolsPath <tools>`.
 
 Resize handles also use canvas snapping without moving the opposite visible crop handle. Disable View > Enable Canvas Snapping for raw resizing. Focused check: `scripts/test-resizesnap.ps1 -ToolsPath <tools>`. See [resize snapping evidence](docs/RESIZE-SNAP-EVIDENCE.md).
+
+Project saves retry short-lived Windows sharing and replacement-lock failures within a bounded window. Persistent failures preserve the previous destination; failed Save As keeps the active project path and unsaved state. Focused check: `scripts/test-projectsave.ps1 -ToolsPath <tools>`. See [save evidence and limitations](docs/PROJECT-SAVE-EVIDENCE.md).
