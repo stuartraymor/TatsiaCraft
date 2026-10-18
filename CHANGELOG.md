@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.6
+
+- Drag source media inside a fixed crop aperture, with source-edge clamps and one gesture per undo checkpoint.
+- Snap visible crop edges and centers to the canvas and active visual layers; show transient guides outside frame/video export. View > Enable Canvas Snapping and Ctrl+semicolon toggle snapping.
+- Add six independently placed Modify > Align to Canvas commands, with visible cropped/rotated bounds and undo/redo. Hidden, locked, inactive, audio and animated selections are guarded.
+- Add 286 crop-movement and 68 alignment checks including actual preview/export pixels, save/reopen, zoom-aware tolerance, guide rendering/export exclusion and editor undo/redo.
+- Add a release preparation/install step so the installed workflow can be checked before publication, reusing the exact verified executable.
+- Exact reference guide styling, tolerance, resize snapping, multi-selection and animated crop interaction remain unverified.
+
 ## 0.0.5
 
 - Subdue media extending beyond the project rectangle during canvas editing while leaving the project interior bright.

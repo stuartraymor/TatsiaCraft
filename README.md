@@ -60,3 +60,7 @@ The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries
 `scripts/test-resize.ps1 -ToolsPath <compatible-tools-directory>` checks anchored resize geometry against actual WPF crop bounds, reference measurements, preview/export pixels and persisted projects. See [resize evidence](docs/RESIZE-EVIDENCE.md) for the exact observed behavior and remaining limits.
 
 `scripts/test-offcanvas.ps1 -ToolsPath <compatible-tools-directory>` checks display shading, viewport changes, selection visibility and undimmed frame/video exports. Its reference and coverage boundaries are in [off-canvas evidence](docs/OFF-CANVAS-EVIDENCE.md).
+
+Canvas crop mode supports dragging source media beneath a fixed crop frame. Canvas selection supports edge/center snapping and transient alignment guides; use View > Enable Canvas Snapping or Ctrl+semicolon. Modify > Align to Canvas provides six explicit alignment actions. These convenience command placements and gold guide styling are independent implementation choices. See [canvas evidence](docs/CANVAS-MOVE-ALIGN-EVIDENCE.md).
+
+Focused checks: `scripts/test-cropmove.ps1 -ToolsPath <tools>` and `scripts/test-alignment.ps1 -ToolsPath <tools>`.

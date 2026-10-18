@@ -13,6 +13,9 @@ public partial class Editor {
  Grid editorRoot,canvasBody,transportPanel; DockPanel editorToolbar; StackPanel canvasToolbar;
  Window detachedCanvas; Border detachedNotice; ComboBox canvasZoom; int lastCanvasZoom;
  Button selectCanvasTool,cropCanvasTool,panCanvasTool;
+ MenuItem canvasSnapMenu;
+ void ToggleCanvasSnapping(){if(live==null)return;live.SetCanvasSnapping(!live.CanvasSnappingEnabled);canvasSnapMenu.IsChecked=live.CanvasSnappingEnabled;}
+ void AlignCanvasSelection(string alignment){if(live!=null)live.AlignSelection(alignment);}
  void UpdateCanvasTools(){selectCanvasTool.Background=!live.CropMode&&!live.PanMode?accent:B("#252d33");cropCanvasTool.Background=live.CropMode?accent:B("#252d33");panCanvasTool.Background=live.PanMode?accent:B("#252d33");}
  void SetCanvasCrop(bool enabled){if(live==null)return;live.SetCropMode(enabled);live.SetSelection(selected);UpdateCanvasTools();}
  void SetCanvasPan(){if(live==null)return;live.SetPanMode(true);UpdateCanvasTools();}
@@ -31,9 +34,13 @@ public partial class Editor {
   AddMenu(menu,"File",new[]{"New project","Home","Open project…","Save","Save as…","Import media…","Project settings…","Exit"},new Action[]{New,ShowHome,Open,()=>Save(false),()=>Save(true),ImportDialog,Settings,()=>Close()});
   AddMenu(menu,"Edit",new[]{"Undo","Redo","Split at playhead","Delete selected","Duplicate selected","Copy clip","Cut clip","Paste clip"},new Action[]{Undo,Redo,Split,Delete,Duplicate,Copy,Cut,Paste});
   AddMenu(menu,"Modify",new[]{"Clip properties","Reset transform"},new Action[]{()=>{propertyColumn.Width=new GridLength(260);},()=>{if(selected==null)return;Checkpoint();selected.Scale=1;selected.Rotation=0;selected.X=selected.Y=0;selected.Animate=false;Refresh();}});
+  var alignMenu=new MenuItem{Header="Align to Canvas"};((MenuItem)menu.Items[2]).Items.Add(alignMenu);
+  foreach(string name in new[]{"Left","Horizontal center","Right","Top","Vertical center","Bottom"}){string alignment=name;var item=new MenuItem{Header=name};item.Click+=(s,e)=>AlignCanvasSelection(alignment);alignMenu.Items.Add(item);}
+  ((MenuItem)menu.Items[2]).SubmenuOpened+=(s,e)=>{alignMenu.IsEnabled=live!=null&&live.CanAlignSelection;};
   AddMenu(menu,"View",new[]{"Zoom in timeline","Zoom out timeline","Toggle Properties"},new Action[]{()=>{zoom=Math.Min(220,zoom*1.3);DrawTimeline();},()=>{zoom=Math.Max(8,zoom/1.3);DrawTimeline();},()=>{propertyColumn.Width=new GridLength(propertyColumn.Width.Value==0?260:0);}});
+  canvasSnapMenu=new MenuItem{Header="Enable Canvas Snapping",IsCheckable=true,IsChecked=true,InputGestureText="Ctrl+;"};canvasSnapMenu.Click+=(s,e)=>{if(live!=null)live.SetCanvasSnapping(canvasSnapMenu.IsChecked);};((MenuItem)menu.Items[3]).Items.Add(canvasSnapMenu);
   AddMenu(menu,"Export",new[]{"Local MP4 video…","Cancel render"},new Action[]{Export,()=>Engine.CancelRender()});
-  AddMenu(menu,"Help",new[]{"Keyboard shortcuts","About "+ProductInfo.Name},new Action[]{()=>MessageBox.Show("Space  Play / pause\nS  Split\nCtrl+C / X / V  Copy / cut / paste clip\nCtrl+Z / Y  Undo / redo\nCtrl+S  Save\nCtrl+O / I  Open / import\nCanvas: drag to move, corner handles resize, upper handle rotates.\nTimeline: drag clip edges to trim; Shift disables snapping.","Shortcuts"),()=>MessageBox.Show(ProductInfo.DisplayName+"\nIndependent Windows video editor with live preview.\nSee the included report and dependency notices.","About")});
+  AddMenu(menu,"Help",new[]{"Keyboard shortcuts","About "+ProductInfo.Name},new Action[]{()=>MessageBox.Show("Space  Play / pause\nS  Split\nCtrl+C / X / V  Copy / cut / paste clip\nCtrl+Z / Y  Undo / redo\nCtrl+S  Save\nCtrl+O / I  Open / import\nCanvas: drag to move, corner handles resize, side handle rotates.\nCrop mode: drag media inside a fixed crop; drag edges to trim.\nCtrl+;  Toggle canvas alignment snapping.\nModify > Align to Canvas aligns the selected visible crop.\nTimeline: drag clip edges to trim; Shift disables snapping.","Shortcuts"),()=>MessageBox.Show(ProductInfo.DisplayName+"\nIndependent Windows video editor with live preview.\nSee the included report and dependency notices.","About")});
   var toolbar=new DockPanel{Background=bg,LastChildFill=true,Margin=new Thickness(0,0,0,2)};var toolbarFrame=new Border{BorderBrush=accent,BorderThickness=new Thickness(0,0,0,1),Child=toolbar};Grid.SetRow(toolbarFrame,1);root.Children.Add(toolbarFrame);
   var export=Btn("Export  ↗",Export,true);DockPanel.SetDock(export,Dock.Right);toolbar.Children.Add(export);
   var settings=Btn("Project settings",Settings);DockPanel.SetDock(settings,Dock.Right);toolbar.Children.Add(settings);

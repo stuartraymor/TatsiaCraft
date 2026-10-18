@@ -19,7 +19,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | Order | Workflow | Implementation/evidence status | Required validation |
 |---|---|---|---|
 | 1 | Workspace, Home, menu/navigation, version display, detached canvas, zoom | Basic implementation; version and detached zoom tested; detailed styling differs | Every control/state, matching window/DPI captures, shortcuts, focus, small/large windows |
-| 2 | Canvas select, move, resize, rotate, crop, pan, guides, align, fit | Move/resize/rotate exist; measured crop and hand-pan increments implemented; guides/advanced transforms and exact interaction parity open | Native-size geometry, every handle/modifier, off-canvas display, undo, saved data and exported pixels |
+| 2 | Canvas select, move, resize, rotate, crop, pan, guides, align, fit | Move/resize/rotate exist; measured crop and hand-pan increments implemented; basic alignment/snapping guides implemented; advanced transforms and exact interaction parity open | Native-size geometry, every handle/modifier, off-canvas display, undo, saved data and exported pixels |
 | 3 | Import, media bin, sort/filter/search, library, favorites, templates | Limited original implementation | Formats, duplicates, missing/relinked media, metadata, drag/drop and persistence |
 | 4 | Timeline move/trim/split/delete, ranges, snapping, zoom, track controls | Basic edits/track visibility/lock exist | Exact boundaries, frame rounding, same-track overlaps, disabled states, shortcut equivalence |
 | 5 | Multiple selection, grouping, ripple editing, markers, AV separation | Mostly open | Selection and group state, linked timing, ripple propagation, undo/save/export |
@@ -47,9 +47,11 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 - 0.0.4 increment: cropped-object resize anchoring. The measured reference corner and edge gestures, acceptance criteria and REA coverage boundaries are recorded in [RESIZE-EVIDENCE.md](RESIZE-EVIDENCE.md). Independent tests cover every handle, rotated geometry, fitted/native sizes, pointer offsets, clamps, actual preview/export pixels and save/reopen.
 - 0.0.5 increment: off-canvas editing dimming. [OFF-CANVAS-EVIDENCE.md](OFF-CANVAS-EVIDENCE.md) records the reference observation and qualitative limits. 44 checks passed for four-edge overflow, bright interior/grips, viewport changes, project-data preservation and undimmed frame/video exports. This does not establish an exact shade color/opacity match.
 
-Next unmet canvas acceptance checks: source movement inside a crop and align/snap guides. Then expand the command/context-menu inventory and timeline selection/ripple workflows. No entire workstream is marked complete by these increments.
+- 0.0.6 increment: fixed-aperture crop source movement, canvas/active-layer edge and center snapping, transient alignment guides and six explicit alignment commands. [CANVAS-MOVE-ALIGN-EVIDENCE.md](CANVAS-MOVE-ALIGN-EVIDENCE.md) records observed behavior, independent choices and limits. 286 crop-movement and 68 alignment checks cover preview/export, save/reopen, source clamps, visible bounds, threshold across zoom, guide export exclusion and editor undo/redo.
 
-Crop-specific residuals: source movement within a crop, modifier keys, full rotated/animated reference resize parity, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
+Next unmet canvas acceptance checks: resize snapping, rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. No entire workstream is marked complete by these increments.
+
+Crop-specific residuals: modifier keys, full rotated/animated reference resize parity, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
 
 ## Current evidence boundary
 

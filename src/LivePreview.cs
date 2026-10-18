@@ -37,15 +37,38 @@ namespace TasiaCraft {
   Project project; Clip selection; double position,origin; volatile bool disposed; bool editing;
   Point down; double oldX,oldY,oldScale,oldRotation; string gesture;
   CanvasResizeOperation resizeOperation;
+  CanvasCropMoveOperation cropMoveOperation;
+  readonly Border viewHost=new Border{ClipToBounds=false};
+  readonly CanvasGuideOverlay alignmentGuides;
+  public bool CanvasSnappingEnabled {get;private set;}
+  void ClearGuides(){if(alignmentGuides!=null)alignmentGuides.SetGuides(null,null);}
+  public void SetCanvasSnapping(bool enabled){CanvasSnappingEnabled=enabled;ClearGuides();}
+  bool EditableSelection(){return project!=null&&selection!=null&&!selection.Animate&&!Hidden(selection)&&!Locked(selection)&&layers.ContainsKey(selection.Id)&&layers[selection.Id].Active&&(layers[selection.Id].Media==null||layers[selection.Id].Media.Kind!="audio");}
+  CanvasSnapResult SnapMove(double x,double y){
+   if(!CanvasSnappingEnabled||!EditableSelection())return new CanvasSnapResult(0,0,null,null);
+   var layer=layers[selection.Id];var bounds=CanvasAlignment.Bounds(selection,layer.Box.Width,layer.Box.Height,project.Width,project.Height);bounds.Offset(x-selection.X,y-selection.Y);
+   var targets=new List<Rect>{new Rect(0,0,project.Width,project.Height)};
+   foreach(var other in layers.Values.OrderBy(l=>l.Z))if(other.Clip!=selection&&other.Active&&!Hidden(other.Clip)&&!other.Clip.Animate&&(other.Media==null||other.Media.Kind!="audio"))targets.Add(CanvasAlignment.Bounds(other.Clip,other.Box.Width,other.Box.Height,project.Width,project.Height));
+   var t=Stage.TransformToAncestor(this);double displayed=(t.Transform(new Point(1,0))-t.Transform(new Point(0,0))).Length;
+   var snap=CanvasAlignment.Snap(bounds,targets,6/Math.Max(.00001,displayed));
+   bool validX=Math.Abs(x+snap.DeltaX)<=32768,validY=Math.Abs(y+snap.DeltaY)<=32768;
+   return new CanvasSnapResult(validX?snap.DeltaX:0,validY?snap.DeltaY:0,validX?snap.GuideX:null,validY?snap.GuideY:null);
+  }
+  public bool CanAlignSelection {get{return EditableSelection();}}
+  public bool AlignSelection(string alignment){
+   EndDrag(this,null);ClearGuides();if(!EditableSelection())return false;var layer=layers[selection.Id];var delta=CanvasAlignment.Align(CanvasAlignment.Bounds(selection,layer.Box.Width,layer.Box.Height,project.Width,project.Height),project.Width,project.Height,alignment);
+   if(delta.LengthSquared<1e-16)return false;if(Math.Abs(selection.X+delta.X)>32768||Math.Abs(selection.Y+delta.Y)>32768)return false;
+   Pause();if(BeforeEdit!=null)BeforeEdit();selection.X+=delta.X;selection.Y+=delta.Y;Update(false);if(AfterEdit!=null)AfterEdit();return true;
+  }
   double oldCropLeft,oldCropTop,oldCropRight,oldCropBottom;
   public bool CropMode {get;private set;}
   readonly TranslateTransform viewTranslation=new TranslateTransform();
   bool panning;Point panDown;Vector panOrigin;
   public bool PanMode {get;private set;}
   public Vector ViewOffset {get{return new Vector(viewTranslation.X,viewTranslation.Y);}}
-  public void SetViewOffset(double x,double y){if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y))throw new ArgumentException("Viewport offset must be finite");viewTranslation.X=Math.Max(-32768,Math.Min(32768,x));viewTranslation.Y=Math.Max(-32768,Math.Min(32768,y));UpdateOffCanvasShade();}
+  public void SetViewOffset(double x,double y){if(double.IsNaN(x)||double.IsNaN(y)||double.IsInfinity(x)||double.IsInfinity(y))throw new ArgumentException("Viewport offset must be finite");ClearGuides();viewTranslation.X=Math.Max(-32768,Math.Min(32768,x));viewTranslation.Y=Math.Max(-32768,Math.Min(32768,y));UpdateOffCanvasShade();}
   public void ResetViewOffset(){SetViewOffset(0,0);}
-  public void SetPanMode(bool enabled){EndDrag(this,null);PanMode=enabled;if(enabled)CropMode=false;panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Cursor=enabled?Cursors.Hand:Cursors.Arrow;DrawHandles();Say(enabled?"Pan: drag the workspace; clip properties and export stay unchanged":"Select canvas");}
+  public void SetPanMode(bool enabled){EndDrag(this,null);ClearGuides();PanMode=enabled;if(enabled)CropMode=false;panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Cursor=enabled?Cursors.Hand:Cursors.Arrow;DrawHandles();Say(enabled?"Pan: drag the workspace; clip properties and export stay unchanged":"Select canvas");}
   public Canvas Stage {get;private set;}
   public double ViewZoom {get;private set;}
   public double Position {get{return position;}}
@@ -57,7 +80,7 @@ namespace TasiaCraft {
   public LivePreview() {
    Stage=new ProjectCanvas{Width=1280,Height=720,Background=Brushes.Black,ClipToBounds=false};
    AutomationProperties.SetAutomationId(Stage,"ProjectCanvas");AutomationProperties.SetName(Stage,"Project canvas");
-   viewport.Child=Stage;viewport.RenderTransform=viewTranslation;viewport.ClipToBounds=false;Content=viewport;Background=Brushes.Transparent;ClipToBounds=true;
+   viewport.Child=Stage;viewport.RenderTransform=viewTranslation;viewport.ClipToBounds=false;var display=new Grid();alignmentGuides=new CanvasGuideOverlay(this);display.Children.Add(viewHost);display.Children.Add(alignmentGuides);viewHost.Child=viewport;Content=display;CanvasSnappingEnabled=true;Background=Brushes.Transparent;ClipToBounds=true;
    PreviewMouseLeftButtonDown+=(s,e)=>{if(!PanMode)return;panDown=e.GetPosition(this);panOrigin=ViewOffset;panning=true;CaptureMouse();e.Handled=true;};
    PreviewMouseMove+=(s,e)=>{if(!panning||e.LeftButton!=MouseButtonState.Pressed)return;Vector delta=e.GetPosition(this)-panDown;SetViewOffset(panOrigin.X+delta.X,panOrigin.Y+delta.Y);e.Handled=true;};
    PreviewMouseLeftButtonUp+=(s,e)=>{if(!panning)return;panning=false;ReleaseMouseCapture();e.Handled=true;};
@@ -85,7 +108,7 @@ namespace TasiaCraft {
   double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
   public void SetProject(Project value){
    bool resume=IsPlaying;Pause();
-   if(!object.ReferenceEquals(project,value)){ClearLayers();project=value;ResetViewOffset();}
+   if(!object.ReferenceEquals(project,value)){EndDrag(this,null);ClearGuides();ClearLayers();project=value;ResetViewOffset();}
    if(project==null){position=0;handles.Children.Clear();return;}
    Stage.Width=project.Width;Stage.Height=project.Height;
    SetViewZoom(ViewZoom);
@@ -93,23 +116,24 @@ namespace TasiaCraft {
    foreach(string id in layers.Keys.Where(id=>!keep.Contains(id)||!object.ReferenceEquals(layers[id].Clip,project.Clips.First(c=>c.Id==id))||layers[id].Media!=project.Media.FirstOrDefault(m=>m.Id==layers[id].Clip.MediaId)).ToArray())Remove(id);
    Seek(position);if(resume)Play();
   }
-  public void SetSelection(Clip value){selection=value;DrawHandles();}
-  public void SetCropMode(bool enabled){SetPanMode(false);EndDrag(this,null);CropMode=enabled;DrawHandles();Say(enabled?"Crop: drag an edge or corner; source position and scale stay fixed":"Select: drag to move or use transform handles");}
+  public void SetSelection(Clip value){EndDrag(this,null);ClearGuides();selection=value;DrawHandles();}
+  public void SetCropMode(bool enabled){SetPanMode(false);EndDrag(this,null);CropMode=enabled;DrawHandles();Say(enabled?"Crop: drag edges to trim or drag media inside the fixed crop":"Select: drag to move or use transform handles");}
   // Viewport magnification never mutates clip transforms or export geometry.
   public void SetViewZoom(double zoom){
+   ClearGuides();
    ViewZoom=double.IsNaN(zoom)?0:Math.Max(0,Math.Min(20,zoom));
    double dpiX=1,dpiY=1;var source=PresentationSource.FromVisual(this);if(source!=null&&source.CompositionTarget!=null){dpiX=source.CompositionTarget.TransformToDevice.M11;dpiY=source.CompositionTarget.TransformToDevice.M22;}
-   if(ViewZoom==0){scroller.Content=null;Content=null;viewport.Width=double.NaN;viewport.Height=double.NaN;viewport.MaxWidth=Stage.Width/dpiX;viewport.MaxHeight=Stage.Height/dpiY;viewport.StretchDirection=StretchDirection.DownOnly;Content=viewport;}
-   else{Content=null;scroller.Content=null;viewport.MaxWidth=double.PositiveInfinity;viewport.MaxHeight=double.PositiveInfinity;viewport.StretchDirection=StretchDirection.Both;viewport.Width=Stage.Width*ViewZoom/dpiX;viewport.Height=Stage.Height*ViewZoom/dpiY;scroller.Content=viewport;Content=scroller;}
+   if(ViewZoom==0){scroller.Content=null;viewHost.Child=null;viewport.Width=double.NaN;viewport.Height=double.NaN;viewport.MaxWidth=Stage.Width/dpiX;viewport.MaxHeight=Stage.Height/dpiY;viewport.StretchDirection=StretchDirection.DownOnly;viewHost.Child=viewport;}
+   else{viewHost.Child=null;scroller.Content=null;viewport.MaxWidth=double.PositiveInfinity;viewport.MaxHeight=double.PositiveInfinity;viewport.StretchDirection=StretchDirection.Both;viewport.Width=Stage.Width*ViewZoom/dpiX;viewport.Height=Stage.Height*ViewZoom/dpiY;scroller.Content=viewport;viewHost.Child=scroller;}
    UpdateOffCanvasShade();
   }
   public void Refresh(){Update(true);}
   public void Seek(double time){
-   position=Math.Max(0,Math.Min(Length(),double.IsNaN(time)?0:time));origin=position;watch.Restart();
+   ClearGuides();position=Math.Max(0,Math.Min(Length(),double.IsNaN(time)?0:time));origin=position;watch.Restart();
    Update(true);if(PositionChanged!=null)PositionChanged(position);
   }
-  public void Play(){if(disposed||project==null||Length()<=0)return;if(position>=Length()-.01)position=0;origin=position;watch.Restart();IsPlaying=true;timer.Start();Update(true);Say("Playing live timeline");}
-  public void Pause(){if(IsPlaying){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);IsPlaying=false;watch.Stop();}timer.Stop();foreach(var l in layers.Values)if(l.Decoder!=null){l.Decoder.Pause();l.Running=false;}DrawHandles();}
+  public void Play(){ClearGuides();if(disposed||project==null||Length()<=0)return;if(position>=Length()-.01)position=0;origin=position;watch.Restart();IsPlaying=true;timer.Start();Update(true);Say("Playing live timeline");}
+  public void Pause(){ClearGuides();if(IsPlaying){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);IsPlaying=false;watch.Stop();}timer.Stop();foreach(var l in layers.Values)if(l.Decoder!=null){l.Decoder.Pause();l.Running=false;}DrawHandles();}
   void Tick(){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);Update(false);if(PositionChanged!=null)PositionChanged(position);if(position>=Length()){Pause();Say("Playback finished");}}
   Layer Create(Clip clip){
    var layer=new Layer{Clip=clip,Media=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId)};
@@ -222,7 +246,7 @@ namespace TasiaCraft {
    var outline=new Canvas{Width=w,Height=h,RenderTransform=new RotateTransform(rotation,w/2,h/2)};
    Canvas.SetLeft(outline,cx-w/2);Canvas.SetTop(outline,cy-h/2);handles.Children.Add(outline);
    double left=w*selection.CropLeft,top=h*selection.CropTop,right=w*(1-selection.CropRight),bottom=h*(1-selection.CropBottom);
-   var rect=new Rectangle{Width=right-left,Height=bottom-top,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=CropMode?Cursors.Arrow:Cursors.SizeAll};Canvas.SetLeft(rect,left);Canvas.SetTop(rect,top);outline.Children.Add(rect);rect.MouseLeftButtonDown+=(s,e)=>StartDrag("move",e);
+   var rect=new Rectangle{Width=right-left,Height=bottom-top,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=Cursors.SizeAll};Canvas.SetLeft(rect,left);Canvas.SetTop(rect,top);outline.Children.Add(rect);rect.MouseLeftButtonDown+=(s,e)=>StartDrag("move",e);
    bool canCrop=string.IsNullOrEmpty(selection.Text)&&l.Media!=null&&l.Media.Width>0&&l.Media.Height>0;
    foreach(var pos in new[]{new[]{0,0},new[]{1,0},new[]{2,0},new[]{0,1},new[]{2,1},new[]{0,2},new[]{1,2},new[]{2,2}}){
     int ix=pos[0],iy=pos[1];string kind=CropMode?"crop"+(ix==0?"-left":ix==2?"-right":"")+(iy==0?"-top":iy==2?"-bottom":""):"scale-"+ix+"-"+iy;
@@ -234,12 +258,23 @@ namespace TasiaCraft {
    }
   }
   void StartDrag(string kind,MouseButtonEventArgs e){
-   if(selection==null||Hidden(selection)||Locked(selection)||CropMode&&kind=="move")return;var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;resizeOperation=null;if(kind.StartsWith("scale-")){Layer resizeLayer;if(!layers.TryGetValue(selection.Id,out resizeLayer))return;var parts=kind.Split('-');resizeOperation=new CanvasResizeOperation(selection,resizeLayer.Box.Width,resizeLayer.Box.Height,project.Width,project.Height,int.Parse(parts[1]),int.Parse(parts[2]),down);}editing=false;Stage.CaptureMouse();e.Handled=true;
+   if(!EditableSelection())return;if(CropMode&&kind=="move"){Layer sourceLayer=layers[selection.Id];if(sourceLayer.Media==null||sourceLayer.Media.Kind=="audio"||!string.IsNullOrEmpty(selection.Text))return;kind="crop-move";}var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;resizeOperation=null;cropMoveOperation=null;ClearGuides();if(kind=="crop-move"){var sourceLayer=layers[selection.Id];cropMoveOperation=new CanvasCropMoveOperation(selection,sourceLayer.Box.Width,sourceLayer.Box.Height,down);}if(kind.StartsWith("scale-")){Layer resizeLayer;if(!layers.TryGetValue(selection.Id,out resizeLayer))return;var parts=kind.Split('-');resizeOperation=new CanvasResizeOperation(selection,resizeLayer.Box.Width,resizeLayer.Box.Height,project.Width,project.Height,int.Parse(parts[1]),int.Parse(parts[2]),down);}editing=false;Stage.CaptureMouse();e.Handled=true;
   }
   void Drag(object sender,MouseEventArgs e){
    if(gesture==null||selection==null||e.LeftButton!=MouseButtonState.Pressed)return;
    if(Hidden(selection)||Locked(selection)){EndDrag(sender,null);return;}
    Point p=e.GetPosition(Stage);if(!editing&&(p-down).Length<2)return;
+   if(gesture=="crop-move"&&cropMoveOperation!=null){
+    var result=cropMoveOperation.Evaluate(p);
+    if(Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){e.Handled=true;return;}
+    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.ApplyTo(selection);Update(false);e.Handled=true;return;
+   }
+   if(gesture=="move"){
+    double x=Math.Max(-32768,Math.Min(32768,oldX+p.X-down.X)),y=Math.Max(-32768,Math.Min(32768,oldY+p.Y-down.Y));
+    var snap=SnapMove(x,y);x+=snap.DeltaX;y+=snap.DeltaY;
+    if(Math.Abs(x-selection.X)<1e-9&&Math.Abs(y-selection.Y)<1e-9){alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;}
+    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}selection.X=x;selection.Y=y;Update(false);alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;
+   }
    if(gesture.StartsWith("scale-")&&resizeOperation!=null){
     var result=resizeOperation.Evaluate(p);
     if(Math.Abs(result.Scale-selection.Scale)<1e-10&&Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){e.Handled=true;return;}
@@ -255,18 +290,17 @@ namespace TasiaCraft {
     if(gesture.Contains("right"))selection.CropRight=Math.Max(0,Math.Min(1-oldCropLeft-minX,oldCropRight-ux));
     if(gesture.Contains("top"))selection.CropTop=Math.Max(0,Math.Min(1-oldCropBottom-minY,oldCropTop+uy));
     if(gesture.Contains("bottom"))selection.CropBottom=Math.Max(0,Math.Min(1-oldCropTop-minY,oldCropBottom-uy));
-   }else if(gesture=="move"){selection.X=Math.Max(-32768,Math.Min(32768,oldX+p.X-down.X));selection.Y=Math.Max(-32768,Math.Min(32768,oldY+p.Y-down.Y));}
-   else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
+   }else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
    Update(false);e.Handled=true;
   }
-  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
+  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;cropMoveOperation=null;ClearGuides();bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
   void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);layers.Remove(id);}
   void ClearLayers(){foreach(string id in layers.Keys.ToArray())Remove(id);}
   public void Dispose(){
    KeyValuePair<Process,string>[] running;
    lock(proxyProcesses){if(disposed)return;disposed=true;running=proxyProcesses.ToArray();foreach(var pair in running)try{if(!pair.Key.HasExited)pair.Key.Kill();}catch(InvalidOperationException){}catch(System.ComponentModel.Win32Exception){}}
    foreach(var pair in running){try{pair.Key.WaitForExit(1000);}catch(InvalidOperationException){}try{if(File.Exists(pair.Value))File.Delete(pair.Value);}catch(IOException){}catch(UnauthorizedAccessException){}}
-   panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Pause();timer.Stop();ClearLayers();handles.Children.Clear();offCanvasShade.Visibility=Visibility.Collapsed;
+   ClearGuides();panning=false;if(IsMouseCaptured)ReleaseMouseCapture();Pause();timer.Stop();ClearLayers();handles.Children.Clear();offCanvasShade.Visibility=Visibility.Collapsed;
   }
  }
 }

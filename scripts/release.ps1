@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Message,[switch]$Resume,[string]$ToolsPath)
+param([Parameter(Mandatory=$true)][string]$Message,[switch]$Resume,[string]$ToolsPath,[switch]$PrepareOnly)
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'version.ps1')
 $releaseRoot=Split-Path $PSScriptRoot -Parent
@@ -53,6 +53,8 @@ try {
   if((Get-Item -LiteralPath $preservedApp).VersionInfo.ProductVersion -ne $version){throw 'Preserved release artifact version mismatch'}
   Copy-Item -LiteralPath $preservedApp -Destination 'dist\TasiaCraft\TasiaCraft.exe'
  }else{
+  & (Join-Path $PSScriptRoot 'test-cropmove.ps1') -ToolsPath $ToolsPath
+  & (Join-Path $PSScriptRoot 'test-alignment.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-offcanvas.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-resize.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-pan.ps1')
@@ -78,6 +80,7 @@ try {
   if($smoke.ExitCode -ne 0){throw 'Installed editor startup smoke failed'}
   Write-Output ('PASS installed startup and clean shutdown: '+$installed)
  }finally{if(-not $smoke.HasExited){Stop-Process -Id $smoke.Id}}
+ if($PrepareOnly){Write-Output ("Prepared and installed "+$version+"; source and executable are preserved for workflow verification before publication.");return}
  if(-not $Resume){
   & git add -- VERSION
   if($LASTEXITCODE -ne 0){throw 'Could not stage VERSION'}
