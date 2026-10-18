@@ -49,7 +49,9 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 
 - 0.0.6 increment: fixed-aperture crop source movement, canvas/active-layer edge and center snapping, transient alignment guides and six explicit alignment commands. [CANVAS-MOVE-ALIGN-EVIDENCE.md](CANVAS-MOVE-ALIGN-EVIDENCE.md) records observed behavior, independent choices and limits. 286 crop-movement and 68 alignment checks cover preview/export, save/reopen, source clamps, visible bounds, threshold across zoom, guide export exclusion and editor undo/redo.
 
-Next unmet canvas acceptance checks: resize snapping, rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. No entire workstream is marked complete by these increments.
+- 0.0.7 increment: anchored resize snapping with the shared canvas setting, active visual layer targets and transient guides. [RESIZE-SNAP-EVIDENCE.md](RESIZE-SNAP-EVIDENCE.md) records the measured enabled/disabled side-handle comparison and remaining limits.445 checks cover every handle under cropped/rotated/native/fitted geometry, source/anchor preservation, zoom thresholds, preview/export and save/reopen.
+
+Next unmet canvas acceptance checks: rotated/animated reference interactions, multi-selection and exact guide/handle styling. Expand command/context-menu inventory and timeline selection/ripple workflows next. No entire workstream is marked complete by these increments.
 
 Crop-specific residuals: modifier keys, full rotated/animated reference resize parity, exact reference handle styling, text crop, perspective and animated crop boundaries. UI crop drags retain at least two source pixels; numeric/serialized crops permit one. Preview uses fractional boundaries while export rounds boundaries to whole source pixels; subpixel edge parity is not claimed.
 

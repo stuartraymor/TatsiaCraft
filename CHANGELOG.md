@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.7
+
+- Apply canvas snapping to resize handles while retaining uniform scale, the opposite visible crop anchor and source crop/rotation values.
+- Reuse the canvas snapping toggle, active-layer targets, zoom-aware tolerance and display-only guides. Disabled snapping keeps the existing raw geometry; clamped/no-op resizes avoid extra checkpoints.
+- Add445 independent resize-snap checks covering the measured reference case, every handle with cropped/rotated/native/fitted media, pointer offsets, deterministic targets, limits, actual viewport zoom, preview/export and save/reopen.
+- Exact reference corner/rotation/modifier snapping, guide styling/priority and full animated editing remain unverified.
+
 ## 0.0.6
 
 - Drag source media inside a fixed crop aperture, with source-edge clamps and one gesture per undo checkpoint.

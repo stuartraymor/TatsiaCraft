@@ -64,3 +64,5 @@ The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries
 Canvas crop mode supports dragging source media beneath a fixed crop frame. Canvas selection supports edge/center snapping and transient alignment guides; use View > Enable Canvas Snapping or Ctrl+semicolon. Modify > Align to Canvas provides six explicit alignment actions. These convenience command placements and gold guide styling are independent implementation choices. See [canvas evidence](docs/CANVAS-MOVE-ALIGN-EVIDENCE.md).
 
 Focused checks: `scripts/test-cropmove.ps1 -ToolsPath <tools>` and `scripts/test-alignment.ps1 -ToolsPath <tools>`.
+
+Resize handles also use canvas snapping without moving the opposite visible crop handle. Disable View > Enable Canvas Snapping for raw resizing. Focused check: `scripts/test-resizesnap.ps1 -ToolsPath <tools>`. See [resize snapping evidence](docs/RESIZE-SNAP-EVIDENCE.md).

@@ -47,13 +47,17 @@ namespace TasiaCraft {
   CanvasSnapResult SnapMove(double x,double y){
    if(!CanvasSnappingEnabled||!EditableSelection())return new CanvasSnapResult(0,0,null,null);
    var layer=layers[selection.Id];var bounds=CanvasAlignment.Bounds(selection,layer.Box.Width,layer.Box.Height,project.Width,project.Height);bounds.Offset(x-selection.X,y-selection.Y);
-   var targets=new List<Rect>{new Rect(0,0,project.Width,project.Height)};
-   foreach(var other in layers.Values.OrderBy(l=>l.Z))if(other.Clip!=selection&&other.Active&&!Hidden(other.Clip)&&!other.Clip.Animate&&(other.Media==null||other.Media.Kind!="audio"))targets.Add(CanvasAlignment.Bounds(other.Clip,other.Box.Width,other.Box.Height,project.Width,project.Height));
-   var t=Stage.TransformToAncestor(this);double displayed=(t.Transform(new Point(1,0))-t.Transform(new Point(0,0))).Length;
-   var snap=CanvasAlignment.Snap(bounds,targets,6/Math.Max(.00001,displayed));
+   var snap=CanvasAlignment.Snap(bounds,SnapTargets(),SnapTolerance());
    bool validX=Math.Abs(x+snap.DeltaX)<=32768,validY=Math.Abs(y+snap.DeltaY)<=32768;
    return new CanvasSnapResult(validX?snap.DeltaX:0,validY?snap.DeltaY:0,validX?snap.GuideX:null,validY?snap.GuideY:null);
   }
+  List<Rect> SnapTargets(){
+   var targets=new List<Rect>{new Rect(0,0,project.Width,project.Height)};
+   foreach(var other in layers.Values.OrderBy(l=>l.Z))if(other.Clip!=selection&&other.Active&&!Hidden(other.Clip)&&!other.Clip.Animate&&(other.Media==null||other.Media.Kind!="audio"))targets.Add(CanvasAlignment.Bounds(other.Clip,other.Box.Width,other.Box.Height,project.Width,project.Height));
+   return targets;
+  }
+  double SnapTolerance(){var t=Stage.TransformToAncestor(this);double displayed=(t.Transform(new Point(1,0))-t.Transform(new Point(0,0))).Length;return 6/Math.Max(.00001,displayed);}
+  CanvasResizeSnapResult SnapResize(Point pointer){return CanvasSnappingEnabled?resizeOperation.EvaluateSnapped(pointer,SnapTargets(),SnapTolerance()):new CanvasResizeSnapResult(resizeOperation.Evaluate(pointer),null,null);}
   public bool CanAlignSelection {get{return EditableSelection();}}
   public bool AlignSelection(string alignment){
    EndDrag(this,null);ClearGuides();if(!EditableSelection())return false;var layer=layers[selection.Id];var delta=CanvasAlignment.Align(CanvasAlignment.Bounds(selection,layer.Box.Width,layer.Box.Height,project.Width,project.Height),project.Width,project.Height,alignment);
@@ -276,9 +280,9 @@ namespace TasiaCraft {
     if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}selection.X=x;selection.Y=y;Update(false);alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;
    }
    if(gesture.StartsWith("scale-")&&resizeOperation!=null){
-    var result=resizeOperation.Evaluate(p);
-    if(Math.Abs(result.Scale-selection.Scale)<1e-10&&Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){e.Handled=true;return;}
-    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.ApplyTo(selection);Update(false);e.Handled=true;return;
+    var snap=SnapResize(p);var result=snap.Result;
+    if(Math.Abs(result.Scale-selection.Scale)<1e-10&&Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;}
+    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.ApplyTo(selection);Update(false);alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;
    }
    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}
    if(gesture.StartsWith("crop")){
