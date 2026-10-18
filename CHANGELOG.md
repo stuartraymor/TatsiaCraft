@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.12
+
+- Add timeline markers, following the observed reference workflow. Ctrl+M or View > Show Markers shows the Marker tray. Add a marker with Shift+M, Modify > Markers > Add Timeline Marker, or a click on the tray. New markers are named Marker N.
+- Rename markers by double-clicking, from the right-click menu, or in the Marker name field of the new Marker properties panel. Delete them from the right-click menu, the Delete key or Remove All Markers. Each edit is one undo step, and markers are saved with the project.
+- Jump to the next or previous marker with Ctrl+] and Ctrl+[. Beginning and End are now Ctrl+Home and Ctrl+End, and Deselect All is Ctrl+Shift+D. Markers snap to clip edges, other markers and the playhead, clip and playhead drags snap to markers, and Shift turns snapping off.
+- Exported MP4 files contain one chapter per marker. A marker after the last clip extends the timeline and the export.
+- Fix Unicode decoding of FFmpeg/FFprobe output.
+- Add 98 marker checks covering the model, decoded chapter export, the editor and menus. The marker thumbnail, quizzes and the transcript tray, the Markers snapping toggle and the Smart Player table of contents remain open.
+
 ## 0.0.11
 
 - Reorganize menus to the observed reference structure and wording: File (Recent Projects, Import submenu), Edit (Split Selected, Select, Deselect All, Jump To), Modify, View (Tools, Canvas and Timeline submenus, Hide/Show Properties), Export (Local File..., Export Frame As...) and Help (Quick Start Guide, Keyboard Shortcuts), with shortcut text.

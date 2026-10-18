@@ -37,7 +37,7 @@ public static class UiChromeTest {
    Require(Items(Find(menu,"File")).Select(Header).SequenceEqual(new[]{"New Project","New Project from Template...","Open Project...","Recent Projects","Home","Save","Save As...","Import","Project Settings...","New Recording...","Exit"}),"File menu wording and order");
    Require(Items(Find(Find(menu,"File"),"Import")).Select(Header).SequenceEqual(new[]{"Media...","Captions..."}),"File Import submenu wording");
    Require(Items(Find(menu,"Edit")).Select(Header).Take(9).SequenceEqual(new[]{"Undo","Redo","Cut","Copy","Paste","Duplicate","Delete","Split Selected","Group"}),"Edit menu leading wording and order");
-   Require(Items(Find(Find(menu,"Edit"),"Jump To")).Select(Header).SequenceEqual(new[]{"Beginning","End","Next Media","Previous Media"}),"Edit Jump To wording");
+   Require(Items(Find(Find(menu,"Edit"),"Jump To")).Select(Header).SequenceEqual(new[]{"Beginning","End","Next Media","Previous Media","Next Marker","Previous Marker"}),"Edit Jump To wording");
    Require(Items(Find(Find(menu,"View"),"Tools")).Select(Header).SequenceEqual((string[])Field(editor,"NavigationTools")),"View Tools lists every navigation tool");
    Require(Items(Find(Find(menu,"View"),"Timeline")).Select(Header).SequenceEqual(new[]{"Zoom In","Zoom Out","Zoom to Fit"}),"View Timeline wording");
    Require(Items(Find(menu,"Export")).Select(Header).SequenceEqual(new[]{"Local File...","Export Frame As...","Cancel Render"}),"Export menu wording");
@@ -65,7 +65,7 @@ public static class UiChromeTest {
    var canvasZoom=(ComboBox)Field(editor,"canvasZoom");canvasZoom.SelectedIndex=4;Invoke(editor,"StepCanvasZoom",1);Require((string)canvasZoom.SelectedItem=="200%","canvas zoom in steps to next preset");Invoke(editor,"StepCanvasZoom",-1);Invoke(editor,"StepCanvasZoom",-1);Require((string)canvasZoom.SelectedItem=="75%","canvas zoom out steps to previous preset");canvasZoom.SelectedIndex=0;
    int tracks=project.TrackCount;Invoke(editor,"AddTrack");Require(((Project)Field(editor,"project")).TrackCount==tracks+1,"Add a track adds one track");Invoke(editor,"Undo");Require(((Project)Field(editor,"project")).TrackCount==tracks,"Add a track is undoable");typeof(Editor).GetField("dirty",flags).SetValue(editor,false);
    var play=(Button)Field(editor,"play");Require(play.Content is Image&&(string)play.ToolTip=="Play (Spacebar)","play button shows icon and spacebar tooltip");
-   Invoke(editor,"Seek",1.5);await Task.Delay(200);Snapshot((FrameworkElement)editor.Content,Path.Combine(root,"editor-1389x812.png"));Require(File.Exists(Path.Combine(root,"editor-1389x812.png")),"editor snapshot rendered");
+   Invoke(editor,"AddMarkerAt",1.0);Invoke(editor,"RenameMarkerTo",((Project)Field(editor,"project")).Markers[0].Id,"Intro");Invoke(editor,"AddMarkerAt",2.5);Invoke(editor,"Seek",1.5);await Task.Delay(200);Snapshot((FrameworkElement)editor.Content,Path.Combine(root,"editor-1389x812.png"));Require(File.Exists(Path.Combine(root,"editor-1389x812.png")),"editor snapshot rendered");
    File.AppendAllText(log,"PASS total "+passed+Environment.NewLine);
   }catch(Exception ex){File.AppendAllText(log,"FAIL "+ex+Environment.NewLine);code=1;}
   finally{typeof(Editor).GetField("dirty",flags).SetValue(editor,false);((LivePreview)Field(editor,"live")).Dispose();editor.Close();app.Shutdown(code);}};

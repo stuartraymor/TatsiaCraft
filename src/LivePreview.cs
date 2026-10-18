@@ -112,7 +112,7 @@ namespace TasiaCraft {
   }
   bool Hidden(Clip clip){return project!=null&&project.HiddenTracks!=null&&project.HiddenTracks.Contains(clip.Track);}
   bool Locked(Clip clip){return project!=null&&project.LockedTracks!=null&&project.LockedTracks.Contains(clip.Track);}
-  double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
+  double Length(){return project==null?0:Engine.Length(project);}
   public void SetProject(Project value){
    bool resume=IsPlaying;Pause();
    if(!object.ReferenceEquals(project,value)){EndDrag(this,null);ClearGuides();ClearLayers();project=value;selection=null;selections.Clear();ResetViewOffset();}
