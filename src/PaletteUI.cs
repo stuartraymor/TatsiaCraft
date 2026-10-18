@@ -46,7 +46,7 @@ public partial class Editor {
    }
   }var image=new DrawingImage(group);image.Freeze();return image;
  }
- void EditPreset(Action<Clip> edit){if(selected==null){Info("Select a timeline clip to apply this preset.");return;}Checkpoint();edit(selected);Refresh();}
+ void EditPreset(Action<Clip> edit){if(selected==null){Info("Select a timeline clip to apply this preset.");return;}if(SelectedClips().Count>1||TrackLocked(selected)){Info("Open the group and select one unlocked member to apply a preset.");return;}Checkpoint();edit(selected);Refresh();}
  void BuildPalette(string name){
   PaletteHeading(name,name=="Annotations"?"Click a preset to insert it on the top track.":name=="Captions"?"Editable text and timed SubRip captions.":"Select a timeline clip, then click a preset.");
   var tiles=new UniformGrid{Columns=3,Margin=new Thickness(4,4,4,10)};library.Children.Add(tiles);Action<string,string,Action> tile=(label,picture,apply)=>tiles.Children.Add(PaletteTile(label,picture,apply));

@@ -1,0 +1,21 @@
+# Multi-selection and grouping: revision 0.0.9
+
+## Observed reference workflow
+
+Using the existing generated fixture in Camtasia 26.2.2.19936, Ctrl+D created a simultaneous duplicate on the next track. Ctrl+A selected both timeline clips (yellow borders; properties described the fixture 'and others'). Ctrl+G collapsed them into one 'Group 1' block on the lower occupied track, retaining the composed canvas image. The group context menu exposes Group (Ctrl+G), Ungroup (Ctrl+U), Open group, Rename Group and Resize Group. Open group showed a separate Group 1 timeline tab with the original two member clips; Main Timeline returned to the collapsed block. The reference duplicate placement is recorded as an observation, not a claim that existing TatsiaCraft duplicate placement matches it.
+
+REA retained member evidence ev_214d7b88642e64fa88f80eeabf5d370074743ea71b9c2287711a51c033b74b2c for WPFSharedFiles.dll, SHA256 46b37ce47761c253e8106cca0e1a28e275aaefbe7b93117b8cfd3ba2e0991822, was inspected through the same-session evidence bundle summary. Partial member coverage contains file-dialog multiselect methods and text-selection callbacks; it does not locate timeline group state. Metadata is not runtime proof. Reuse the Windows native UI observer unsupported-host limitation; no failed analysis is repeated or proprietary source/assets copied.
+
+## Acceptance before implementation
+
+Build a functional first grouping increment: additive/toggle multi-selection in timeline and canvas, Select All, visible selection outlines, unit canvas and timeline translation with preserved relative offsets, and batch Delete/Copy/Cut/Paste/Duplicate. Group (Ctrl+G), Ungroup (Ctrl+U), context actions, meaningful group name, collapsed timeline block and an editable member context must work with undo/redo and save/reopen. Group metadata must leave preview/export composition and source media bytes unchanged. One edit gesture creates one checkpoint; selection-only operations do not dirty the project. Block edits if any affected track is locked; exclude unavailable objects from canvas transforms. Avoid changing only the primary clip when a multi-selection is active.
+
+Use explicit flat group metadata in the independent project format. Existing projects without Groups load with an empty list. Validate unique group/member IDs and valid references; prune memberships after deletion. Nested group creation is explicitly guarded in this increment rather than silently flattening a user's hierarchy. Open-group editing exposes members while preserving their absolute project timing/tracks; it is an independent approximation of the reference's tab context, not a native nested subproject implementation. Group opacity/effects, independent local group timelines, nested hierarchy and every transform/modifier/drag-select behavior remain open. Do not expose unsupported resize/rotate controls on a multiple selection.
+
+Verify guarded operations and malformed metadata, multiple selection/group transitions, relative timing/track/position preservation, clipboard identity remapping, original output pixels, save/reopen and one undo/redo per edit. Run existing regressions, then install and exercise generated projects before publishing the exact executable and source.
+
+## Focused verification
+
+186 isolated checks pass across group validation, legacy loading, exact preview/decoded-export preservation, save/reopen, common movement/clamps, destination and sibling locks, editor selection/group/member context, one-checkpoint undo/redo, batch clipboard identity remapping and deletion. Canvas checks verify multiple outlines against actual animated/cropped/rotated display bounds, absence of unsupported grips, mixed audio/visual movement eligibility, locked siblings and selection-only data preservation. Release preparation additionally runs the existing regression and installation suites; publication requires an installed generated-project workflow smoke test with the exact preserved executable. These checks establish the bounded implementation, not complete Camtasia parity.
+
+The reference was left running. A user-input guard appeared during attempted fixture cleanup; no stale undo sequence was applied after that guard. The generated reference duplicate may remain. This does not change the recorded grouping observations or establish any additional workflow.

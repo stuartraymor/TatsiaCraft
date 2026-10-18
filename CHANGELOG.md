@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.9
+
+- Select multiple clips with Ctrl/Shift-click or Ctrl+A; group with Ctrl+G and ungroup with Ctrl+U. Display collapsed group blocks with Open group and Main Timeline member editing.
+- Move selected clips together on the canvas and timeline, preserving spacing, timing gaps, crop geometry and animation endpoints. Keep selection outlines out of exported video.
+- Copy, cut, paste, duplicate and delete whole selections/groups, with fresh identities, saved group membership, atomic locked-track guards and one undo checkpoint per edit. Preserve old project loading.
+- Add 186 focused grouping/selection/clipboard/movement, preview/export, save/reopen and editor regression checks.
+- This first increment supports flat groups and absolute member timing. Nested groups, independent group timelines, group transform/effect controls and complete reference interaction/layout parity remain open.
+
+
 ## 0.0.8
 
 - Recover automatically from short-lived Windows sharing/lock errors while committing a project save. Retry only three known HRESULTs, with five attempts and at most 1.5 seconds of retry delay; persistent and unrelated errors still report failure.

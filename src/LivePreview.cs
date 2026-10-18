@@ -34,16 +34,17 @@ namespace TasiaCraft {
   readonly OffCanvasShade offCanvasShade=new OffCanvasShade();
   readonly Viewbox viewport=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly};
   readonly ScrollViewer scroller=new ScrollViewer{HorizontalScrollBarVisibility=ScrollBarVisibility.Auto,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};
-  Project project; Clip selection; double position,origin; volatile bool disposed; bool editing;
+  Project project; Clip selection; readonly List<Clip> selections=new List<Clip>(); double position,origin; volatile bool disposed; bool editing;
   Point down; double oldX,oldY,oldScale,oldRotation; string gesture;
   CanvasResizeOperation resizeOperation;
   CanvasCropMoveOperation cropMoveOperation;
+  ClipMoveOperation moveOperation;Rect moveBounds=Rect.Empty;
   readonly Border viewHost=new Border{ClipToBounds=false};
   readonly CanvasGuideOverlay alignmentGuides;
   public bool CanvasSnappingEnabled {get;private set;}
   void ClearGuides(){if(alignmentGuides!=null)alignmentGuides.SetGuides(null,null);}
   public void SetCanvasSnapping(bool enabled){CanvasSnappingEnabled=enabled;ClearGuides();}
-  bool EditableSelection(){return project!=null&&selection!=null&&!selection.Animate&&!Hidden(selection)&&!Locked(selection)&&layers.ContainsKey(selection.Id)&&layers[selection.Id].Active&&(layers[selection.Id].Media==null||layers[selection.Id].Media.Kind!="audio");}
+  bool EditableSelection(){return selections.Count<=1&&project!=null&&selection!=null&&!selection.Animate&&!Hidden(selection)&&!Locked(selection)&&layers.ContainsKey(selection.Id)&&layers[selection.Id].Active&&(layers[selection.Id].Media==null||layers[selection.Id].Media.Kind!="audio");}
   CanvasSnapResult SnapMove(double x,double y){
    if(!CanvasSnappingEnabled||!EditableSelection())return new CanvasSnapResult(0,0,null,null);
    var layer=layers[selection.Id];var bounds=CanvasAlignment.Bounds(selection,layer.Box.Width,layer.Box.Height,project.Width,project.Height);bounds.Offset(x-selection.X,y-selection.Y);
@@ -53,7 +54,7 @@ namespace TasiaCraft {
   }
   List<Rect> SnapTargets(){
    var targets=new List<Rect>{new Rect(0,0,project.Width,project.Height)};
-   foreach(var other in layers.Values.OrderBy(l=>l.Z))if(other.Clip!=selection&&other.Active&&!Hidden(other.Clip)&&!other.Clip.Animate&&(other.Media==null||other.Media.Kind!="audio"))targets.Add(CanvasAlignment.Bounds(other.Clip,other.Box.Width,other.Box.Height,project.Width,project.Height));
+   foreach(var other in layers.Values.OrderBy(l=>l.Z))if(!selections.Contains(other.Clip)&&other.Clip!=selection&&other.Active&&!Hidden(other.Clip)&&!other.Clip.Animate&&(other.Media==null||other.Media.Kind!="audio"))targets.Add(CanvasAlignment.Bounds(other.Clip,other.Box.Width,other.Box.Height,project.Width,project.Height));
    return targets;
   }
   double SnapTolerance(){var t=Stage.TransformToAncestor(this);double displayed=(t.Transform(new Point(1,0))-t.Transform(new Point(0,0))).Length;return 6/Math.Max(.00001,displayed);}
@@ -80,6 +81,8 @@ namespace TasiaCraft {
   public event Action<double> PositionChanged;
   public event Action<string> Status;
   public event Action<Clip> Selecting;
+  // Toggle means Ctrl or Shift; preserve means a normal click on an existing selection.
+  public event Action<Clip,bool,bool> SelectionRequested;
   public event Action BeforeEdit,AfterEdit;
   public LivePreview() {
    Stage=new ProjectCanvas{Width=1280,Height=720,Background=Brushes.Black,ClipToBounds=false};
@@ -93,7 +96,7 @@ namespace TasiaCraft {
    Stage.Children.Add(handles); Panel.SetZIndex(handles,int.MaxValue);
    Stage.Children.Add(offCanvasShade);Panel.SetZIndex(offCanvasShade,int.MaxValue-1);
    LayoutUpdated+=(s,e)=>UpdateOffCanvasShade();SizeChanged+=(s,e)=>UpdateOffCanvasShade();scroller.ScrollChanged+=(s,e)=>UpdateOffCanvasShade();
-   Stage.MouseLeftButtonDown+=(s,e)=>{if(e.OriginalSource==Stage){SetSelection(null);if(Selecting!=null)Selecting(null);}};
+   Stage.MouseLeftButtonDown+=(s,e)=>{if(e.OriginalSource==Stage){if(SelectionRequested!=null)SelectionRequested(null,false,false);else{SetSelection(null);if(Selecting!=null)Selecting(null);}}};
    Stage.MouseMove+=Drag; Stage.MouseLeftButtonUp+=EndDrag; Stage.LostMouseCapture+=(s,e)=>EndDrag(s,null);
    timer.Interval=TimeSpan.FromMilliseconds(1000.0/30);timer.Tick+=(s,e)=>Tick();
   }
@@ -112,7 +115,7 @@ namespace TasiaCraft {
   double Length(){return project==null||project.Clips.Count==0?0:project.Clips.Max(c=>c.Start+c.Duration);}
   public void SetProject(Project value){
    bool resume=IsPlaying;Pause();
-   if(!object.ReferenceEquals(project,value)){EndDrag(this,null);ClearGuides();ClearLayers();project=value;ResetViewOffset();}
+   if(!object.ReferenceEquals(project,value)){EndDrag(this,null);ClearGuides();ClearLayers();project=value;selection=null;selections.Clear();ResetViewOffset();}
    if(project==null){position=0;handles.Children.Clear();return;}
    Stage.Width=project.Width;Stage.Height=project.Height;
    SetViewZoom(ViewZoom);
@@ -120,8 +123,13 @@ namespace TasiaCraft {
    foreach(string id in layers.Keys.Where(id=>!keep.Contains(id)||!object.ReferenceEquals(layers[id].Clip,project.Clips.First(c=>c.Id==id))||layers[id].Media!=project.Media.FirstOrDefault(m=>m.Id==layers[id].Clip.MediaId)).ToArray())Remove(id);
    Seek(position);if(resume)Play();
   }
-  public void SetSelection(Clip value){EndDrag(this,null);ClearGuides();selection=value;DrawHandles();}
-  public void SetCropMode(bool enabled){SetPanMode(false);EndDrag(this,null);CropMode=enabled;DrawHandles();Say(enabled?"Crop: drag edges to trim or drag media inside the fixed crop":"Select: drag to move or use transform handles");}
+  public void SetSelection(Clip value){SetSelections(value==null?new Clip[0]:new[]{value});}
+  public void SetSelections(IEnumerable<Clip> values){
+   EndDrag(this,null);ClearGuides();var ids=new HashSet<string>((values??new Clip[0]).Where(c=>c!=null).Select(c=>c.Id));selections.Clear();
+   if(project!=null)selections.AddRange(project.Clips.Where(c=>ids.Contains(c.Id)));
+   selection=selections.FirstOrDefault();if(selections.Count>1)CropMode=false;DrawHandles();
+  }
+  public void SetCropMode(bool enabled){SetPanMode(false);EndDrag(this,null);CropMode=enabled&&selections.Count<=1;DrawHandles();Say(CropMode?"Crop: drag edges to trim or drag media inside the fixed crop":"Select: drag to move or use transform handles");}
   // Viewport magnification never mutates clip transforms or export geometry.
   public void SetViewZoom(double zoom){
    ClearGuides();
@@ -139,11 +147,18 @@ namespace TasiaCraft {
   public void Play(){ClearGuides();if(disposed||project==null||Length()<=0)return;if(position>=Length()-.01)position=0;origin=position;watch.Restart();IsPlaying=true;timer.Start();Update(true);Say("Playing live timeline");}
   public void Pause(){ClearGuides();if(IsPlaying){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);IsPlaying=false;watch.Stop();}timer.Stop();foreach(var l in layers.Values)if(l.Decoder!=null){l.Decoder.Pause();l.Running=false;}DrawHandles();}
   void Tick(){position=Math.Min(Length(),origin+watch.Elapsed.TotalSeconds);Update(false);if(PositionChanged!=null)PositionChanged(position);if(position>=Length()){Pause();Say("Playback finished");}}
+  void SelectFromPointer(Clip clip,MouseButtonEventArgs e){
+   bool toggle=(Keyboard.Modifiers&(ModifierKeys.Control|ModifierKeys.Shift))!=0,preserve=!toggle&&selections.Contains(clip);
+   if(SelectionRequested!=null)SelectionRequested(clip,toggle,preserve);
+   else{if(!preserve){if(toggle){var next=selections.ToList();if(next.Contains(clip))next.Remove(clip);else next.Add(clip);SetSelections(next);}else SetSelection(clip);}if(Selecting!=null)Selecting(clip);}
+   if(toggle){e.Handled=true;return;}
+   if(selections.Contains(clip)){selection=clip;StartDrag("move",e);}else e.Handled=true;
+  }
   Layer Create(Clip clip){
    var layer=new Layer{Clip=clip,Media=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId)};
    layer.SourceKey=SourceKey(clip,layer.Media);
    layer.Box=new Border{Background=Brushes.Transparent,RenderTransformOrigin=new Point(.5,.5)};
-   layer.Box.MouseLeftButtonDown+=(s,e)=>{SetSelection(clip);if(Selecting!=null)Selecting(clip);StartDrag("move",e);};
+   layer.Box.MouseLeftButtonDown+=(s,e)=>SelectFromPointer(clip,e);
    Stage.Children.Add(layer.Box);layers[clip.Id]=layer;
    if(!string.IsNullOrEmpty(clip.Text)){
     var text=new TextBlock{Text=clip.Text,FontFamily=new FontFamily("Arial"),FontSize=48,Foreground=Brushes.White,TextWrapping=TextWrapping.NoWrap};
@@ -240,7 +255,25 @@ namespace TasiaCraft {
     if(IsPlaying&&l.Active){if(!l.Running){d.Play();l.Running=true;}}else if(l.Running){d.Pause();l.Running=false;}
    }
   }
+  Rect VisibleLayerBounds(Layer layer){
+   var member=layer.Clip;double w=layer.Box.Width,h=layer.Box.Height;
+   var visible=new Rect(w*member.CropLeft,h*member.CropTop,w*(1-member.CropLeft-member.CropRight),h*(1-member.CropTop-member.CropBottom));
+   return layer.Box.TransformToAncestor(Stage).TransformBounds(visible);
+  }
+  void DrawMultipleHandles(){
+    handles.Children.Clear();if(project==null||IsPlaying||PanMode||selections.Any(Locked))return;
+    // Layout must reflect the latest interpolated position and transform origin.
+    Stage.UpdateLayout();
+    foreach(var member in selections){
+     Layer layer;if(Hidden(member)||!layers.TryGetValue(member.Id,out layer)||!layer.Active||layer.Media!=null&&layer.Media.Kind=="audio")continue;
+     var bounds=VisibleLayerBounds(layer);var outline=new Canvas{Width=bounds.Width,Height=bounds.Height};
+     Canvas.SetLeft(outline,bounds.X);Canvas.SetTop(outline,bounds.Y);handles.Children.Add(outline);
+     var rect=new Rectangle{Width=bounds.Width,Height=bounds.Height,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=Cursors.SizeAll};
+     outline.Children.Add(rect);var clicked=member;rect.MouseLeftButtonDown+=(s,e)=>SelectFromPointer(clicked,e);
+    }
+  }
   void DrawHandles(){
+   if(selections.Count>1){DrawMultipleHandles();return;}
    handles.Children.Clear();if(project==null||selection==null||IsPlaying||PanMode||Hidden(selection)||Locked(selection))return;
    Layer l;if(!layers.TryGetValue(selection.Id,out l)||!l.Active||l.Media!=null&&l.Media.Kind=="audio")return;
    double elapsed=Math.Max(0,Math.Min(selection.Duration,position-selection.Start)),k=selection.Animate?elapsed/selection.Duration:0;
@@ -250,7 +283,7 @@ namespace TasiaCraft {
    var outline=new Canvas{Width=w,Height=h,RenderTransform=new RotateTransform(rotation,w/2,h/2)};
    Canvas.SetLeft(outline,cx-w/2);Canvas.SetTop(outline,cy-h/2);handles.Children.Add(outline);
    double left=w*selection.CropLeft,top=h*selection.CropTop,right=w*(1-selection.CropRight),bottom=h*(1-selection.CropBottom);
-   var rect=new Rectangle{Width=right-left,Height=bottom-top,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=Cursors.SizeAll};Canvas.SetLeft(rect,left);Canvas.SetTop(rect,top);outline.Children.Add(rect);rect.MouseLeftButtonDown+=(s,e)=>StartDrag("move",e);
+   var rect=new Rectangle{Width=right-left,Height=bottom-top,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Fill=Brushes.Transparent,Cursor=Cursors.SizeAll};Canvas.SetLeft(rect,left);Canvas.SetTop(rect,top);outline.Children.Add(rect);var outlined=selection;rect.MouseLeftButtonDown+=(s,e)=>SelectFromPointer(outlined,e);
    bool canCrop=string.IsNullOrEmpty(selection.Text)&&l.Media!=null&&l.Media.Width>0&&l.Media.Height>0;
    foreach(var pos in new[]{new[]{0,0},new[]{1,0},new[]{2,0},new[]{0,1},new[]{2,1},new[]{0,2},new[]{1,2},new[]{2,2}}){
     int ix=pos[0],iy=pos[1];string kind=CropMode?"crop"+(ix==0?"-left":ix==2?"-right":"")+(iy==0?"-top":iy==2?"-bottom":""):"scale-"+ix+"-"+iy;
@@ -261,23 +294,45 @@ namespace TasiaCraft {
     var rotate=new Ellipse{Width=14,Height=14,Fill=Brushes.White,Stroke=Brushes.DeepSkyBlue,StrokeThickness=2,Cursor=Cursors.Hand};Canvas.SetLeft(rotate,w+21);Canvas.SetTop(rotate,h/2-7);outline.Children.Add(rotate);rotate.MouseLeftButtonDown+=(s,e)=>StartDrag("rotate",e);
    }
   }
+  bool CanMoveSelection(){
+   if(project==null||selection==null||selections.Count==0||selections.Any(Locked))return false;
+   return selections.Any(member=>{Layer layer;return !Hidden(member)&&layers.TryGetValue(member.Id,out layer)&&layer.Active&&(layer.Media==null||layer.Media.Kind!="audio");});
+  }
   void StartDrag(string kind,MouseButtonEventArgs e){
-   if(!EditableSelection())return;if(CropMode&&kind=="move"){Layer sourceLayer=layers[selection.Id];if(sourceLayer.Media==null||sourceLayer.Media.Kind=="audio"||!string.IsNullOrEmpty(selection.Text))return;kind="crop-move";}var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;resizeOperation=null;cropMoveOperation=null;ClearGuides();if(kind=="crop-move"){var sourceLayer=layers[selection.Id];cropMoveOperation=new CanvasCropMoveOperation(selection,sourceLayer.Box.Width,sourceLayer.Box.Height,down);}if(kind.StartsWith("scale-")){Layer resizeLayer;if(!layers.TryGetValue(selection.Id,out resizeLayer))return;var parts=kind.Split('-');resizeOperation=new CanvasResizeOperation(selection,resizeLayer.Box.Width,resizeLayer.Box.Height,project.Width,project.Height,int.Parse(parts[1]),int.Parse(parts[2]),down);}editing=false;Stage.CaptureMouse();e.Handled=true;
+   bool multiple=selections.Count>1;
+   if(multiple){if(kind!="move"||!CanMoveSelection())return;}else if(!EditableSelection())return;
+   if(CropMode&&kind=="move"){Layer sourceLayer=layers[selection.Id];if(sourceLayer.Media==null||sourceLayer.Media.Kind=="audio"||!string.IsNullOrEmpty(selection.Text))return;kind="crop-move";}
+   var window=Window.GetWindow(this);if(window!=null){window.Focus();Keyboard.Focus(window);}Pause();Stage.UpdateLayout();
+   gesture=kind;down=e.GetPosition(Stage);oldX=selection.X;oldY=selection.Y;oldScale=selection.Scale;oldRotation=selection.Rotation;
+   oldCropLeft=selection.CropLeft;oldCropTop=selection.CropTop;oldCropRight=selection.CropRight;oldCropBottom=selection.CropBottom;
+   resizeOperation=null;cropMoveOperation=null;moveOperation=null;moveBounds=Rect.Empty;ClearGuides();
+   if(kind=="move"){
+    try{moveOperation=new ClipMoveOperation(project,selections);}catch(InvalidOperationException){gesture=null;return;}
+    foreach(var member in selections){Layer layer;if(Hidden(member)||!layers.TryGetValue(member.Id,out layer)||!layer.Active||layer.Media!=null&&layer.Media.Kind=="audio")continue;moveBounds.Union(VisibleLayerBounds(layer));}
+   }
+   if(kind=="crop-move"){var sourceLayer=layers[selection.Id];cropMoveOperation=new CanvasCropMoveOperation(selection,sourceLayer.Box.Width,sourceLayer.Box.Height,down);}
+   if(kind.StartsWith("scale-")){Layer resizeLayer;if(!layers.TryGetValue(selection.Id,out resizeLayer))return;var parts=kind.Split('-');resizeOperation=new CanvasResizeOperation(selection,resizeLayer.Box.Width,resizeLayer.Box.Height,project.Width,project.Height,int.Parse(parts[1]),int.Parse(parts[2]),down);}
+   editing=false;Stage.CaptureMouse();e.Handled=true;
   }
   void Drag(object sender,MouseEventArgs e){
    if(gesture==null||selection==null||e.LeftButton!=MouseButtonState.Pressed)return;
-   if(Hidden(selection)||Locked(selection)){EndDrag(sender,null);return;}
+   if(selections.Count>1?!CanMoveSelection():Hidden(selection)||selections.Any(Locked)){EndDrag(sender,null);return;}
    Point p=e.GetPosition(Stage);if(!editing&&(p-down).Length<2)return;
    if(gesture=="crop-move"&&cropMoveOperation!=null){
     var result=cropMoveOperation.Evaluate(p);
     if(Math.Abs(result.X-selection.X)<1e-9&&Math.Abs(result.Y-selection.Y)<1e-9){e.Handled=true;return;}
     if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.ApplyTo(selection);Update(false);e.Handled=true;return;
    }
-   if(gesture=="move"){
-    double x=Math.Max(-32768,Math.Min(32768,oldX+p.X-down.X)),y=Math.Max(-32768,Math.Min(32768,oldY+p.Y-down.Y));
-    var snap=SnapMove(x,y);x+=snap.DeltaX;y+=snap.DeltaY;
-    if(Math.Abs(x-selection.X)<1e-9&&Math.Abs(y-selection.Y)<1e-9){alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;}
-    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}selection.X=x;selection.Y=y;Update(false);alignmentGuides.SetGuides(snap.GuideX,snap.GuideY);e.Handled=true;return;
+   if(gesture=="move"&&moveOperation!=null){
+    var result=moveOperation.EvaluateCanvas(p.X-down.X,p.Y-down.Y);double? guideX=null,guideY=null;
+    if(CanvasSnappingEnabled&&!moveBounds.IsEmpty){
+     var bounds=moveBounds;bounds.Offset(result.DeltaX,result.DeltaY);var snap=CanvasAlignment.Snap(bounds,SnapTargets(),SnapTolerance());
+     var snapped=moveOperation.EvaluateCanvas(result.DeltaX+snap.DeltaX,result.DeltaY+snap.DeltaY);
+     if(Math.Abs(snapped.DeltaX-result.DeltaX-snap.DeltaX)<1e-8)guideX=snap.GuideX;
+     if(Math.Abs(snapped.DeltaY-result.DeltaY-snap.DeltaY)<1e-8)guideY=snap.GuideY;result=snapped;
+    }
+    if(!result.Changes){alignmentGuides.SetGuides(guideX,guideY);e.Handled=true;return;}
+    if(!editing){if(BeforeEdit!=null)BeforeEdit();editing=true;}result.Apply();Update(false);alignmentGuides.SetGuides(guideX,guideY);e.Handled=true;return;
    }
    if(gesture.StartsWith("scale-")&&resizeOperation!=null){
     var snap=SnapResize(p);var result=snap.Result;
@@ -297,7 +352,7 @@ namespace TasiaCraft {
    }else{Point center=new Point(project.Width/2.0+oldX,project.Height/2.0+oldY);double angle=Math.Atan2(p.Y-center.Y,p.X-center.X)-Math.Atan2(down.Y-center.Y,down.X-center.X);selection.Rotation=oldRotation+angle*180/Math.PI;if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)selection.Rotation=Math.Round(selection.Rotation/15)*15;}
    Update(false);e.Handled=true;
   }
-  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;cropMoveOperation=null;ClearGuides();bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
+  void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;cropMoveOperation=null;moveOperation=null;moveBounds=Rect.Empty;ClearGuides();bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
   void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);layers.Remove(id);}
   void ClearLayers(){foreach(string id in layers.Keys.ToArray())Remove(id);}
   public void Dispose(){
