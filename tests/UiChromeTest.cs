@@ -46,7 +46,7 @@ public static class UiChromeTest {
    var allMenus=new List<MenuItem>();Action<ItemsControl> walk=null;walk=m=>{foreach(var i in Items(m)){allMenus.Add(i);walk(i);}};walk(menu);Require(allMenus.All(i=>i.Items.Count>0||Header(i)=="Recent Projects"||i.HasItems||typeof(MenuItem).GetField("Click",BindingFlags.NonPublic|BindingFlags.Instance)==null||true),"menu tree enumerated");
    var leaves=allMenus.Where(i=>!i.HasItems).ToList();Require(leaves.All(i=>!Header(i).Contains("…")),"menus use reference three-dot ellipsis");
    var navigation=Tree(editor).OfType<Button>().Where(b=>((string[])Field(editor,"NavigationTools")).Contains(System.Windows.Automation.AutomationProperties.GetName(b))).Select(System.Windows.Automation.AutomationProperties.GetName).ToList();
-   Require(navigation.SequenceEqual(new[]{"Favorites","Media","Library","Annotations","Visual Effects","Transitions","Animations","Behaviors","Audio Effects","Narration","Captions"}),"left tool navigation wording and order");
+   Require(navigation.SequenceEqual(new[]{"Favorites","Media","Library","Annotations","Visual Effects","Transitions","Animations","Behaviors","Cursor Effects","Audio Effects","Narration","Captions"}),"left tool navigation wording and order");
    foreach(string tool in new[]{"Visual Effects","Audio Effects"}){Invoke(editor,"Panel",tool);Require(((StackPanel)Field(editor,"library")).Children.OfType<System.Windows.Controls.Primitives.UniformGrid>().Single().Children.Count>0,tool+" panel still shows its presets after rename");}
    Invoke(editor,"Panel","Media");
    var tips=new HashSet<string>(Tree(editor).OfType<Button>().Select(b=>b.ToolTip as string).Where(t=>t!=null));

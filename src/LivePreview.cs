@@ -24,7 +24,7 @@ namespace TasiaCraft {
  public sealed class LivePreview : UserControl, IDisposable {
   sealed class Layer {
    public Clip Clip; public Media Media; public Border Box; public MediaElement Decoder;
-   public FrameworkElement Visual; public bool Ready,Failed,Running,Active; public double Width,Height; public string SourceKey; public double Gain=1; public int Z;
+   public FrameworkElement Visual; public CursorLayer Cursor; public bool Ready,Failed,Running,Active; public double Width,Height; public string SourceKey; public double Gain=1; public int Z;
   }
   readonly Dictionary<string,Layer> layers=new Dictionary<string,Layer>();
   readonly Dictionary<string,Task<string>> proxies=new Dictionary<string,Task<string>>();
@@ -156,6 +156,11 @@ namespace TasiaCraft {
    if(toggle){e.Handled=true;return;}
    if(selections.Contains(clip)){selection=clip;StartDrag("move",e);}else e.Handled=true;
   }
+  // Draws a clip's recorded cursor and cursor effects just above the clip, with the export drawing routine.
+  public sealed class CursorLayer : FrameworkElement {
+   public Project Project; public Clip Source; public CursorTrack Track; public double Local;
+   protected override void OnRender(DrawingContext d){if(Project!=null&&Source!=null&&Track!=null)CursorEffects.Draw(d,Project,Source,Track,Local);}
+  }
   Layer Create(Clip clip){
    var source=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId);if(source!=null&&clip.Stream=="audio")source=new Media{Id=source.Id,Path=source.Path,Name=source.Name,Kind="audio",Duration=source.Duration,HasAudio=true};// separated audio plays its source through an audio-only layer
    var layer=new Layer{Clip=clip,Media=source};
@@ -163,6 +168,7 @@ namespace TasiaCraft {
    layer.Box=new Border{Background=Brushes.Transparent,RenderTransformOrigin=new Point(.5,.5)};
    layer.Box.MouseLeftButtonDown+=(s,e)=>SelectFromPointer(clip,e);
    Stage.Children.Add(layer.Box);layers[clip.Id]=layer;
+   if(CursorEffects.HasCursorData(source)&&clip.Stream!="audio"){var track=CursorTrack.Load(source.CursorPath);if(track!=null){layer.Cursor=new CursorLayer{Project=project,Source=clip,Track=track,IsHitTestVisible=false};Stage.Children.Add(layer.Cursor);}}
    if(!string.IsNullOrEmpty(clip.Text)){
     var text=new TextBlock{Text=clip.Text,FontFamily=new FontFamily("Arial"),FontSize=48,Foreground=Brushes.White,TextWrapping=TextWrapping.NoWrap};
     text.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));layer.Width=text.DesiredSize.Width;layer.Height=text.DesiredSize.Height;layer.Visual=text;layer.Box.Child=text;layer.Ready=true;
@@ -249,7 +255,8 @@ namespace TasiaCraft {
    l.Box.Clip=!text&&!audio?new RectangleGeometry(new Rect(w*c.CropLeft,h*c.CropTop,Math.Max(0,w*(1-c.CropLeft-c.CropRight)),Math.Max(0,h*(1-c.CropTop-c.CropBottom)))):null;
    Canvas.SetLeft(l.Box,(project.Width-w)/2+x);Canvas.SetTop(l.Box,(project.Height-h)/2+y);
    var transforms=new TransformGroup();transforms.Children.Add(new ScaleTransform(scale,scale));transforms.Children.Add(new RotateTransform(text?0:c.Rotation));l.Box.RenderTransform=transforms;
-   Panel.SetZIndex(l.Box,l.Z);
+   Panel.SetZIndex(l.Box,l.Z*2);
+   if(l.Cursor!=null){l.Cursor.Project=project;l.Cursor.Source=c;l.Cursor.Width=project.Width;l.Cursor.Height=project.Height;Canvas.SetLeft(l.Cursor,0);Canvas.SetTop(l.Cursor,0);Panel.SetZIndex(l.Cursor,l.Z*2+1);l.Cursor.Visibility=l.Active&&!audio?Visibility.Visible:Visibility.Collapsed;l.Cursor.Local=elapsed;l.Cursor.InvalidateVisual();}
    l.Box.Opacity=l.Active&&!audio?Math.Max(0,Math.Min(1,c.Opacity))*Fade(c,elapsed)*behavior.Alpha:0;
    l.Box.IsHitTestVisible=l.Active&&!audio;
    if(l.Decoder!=null&&l.Ready&&!l.Failed){
@@ -357,7 +364,7 @@ namespace TasiaCraft {
    Update(false);e.Handled=true;
   }
   void EndDrag(object sender,MouseButtonEventArgs e){if(gesture==null)return;gesture=null;resizeOperation=null;cropMoveOperation=null;moveOperation=null;moveBounds=Rect.Empty;ClearGuides();bool changed=editing;editing=false;if(Stage.IsMouseCaptured)Stage.ReleaseMouseCapture();if(changed&&AfterEdit!=null)AfterEdit();if(e!=null)e.Handled=true;}
-  void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);layers.Remove(id);}
+  void Remove(string id){var l=layers[id];if(l.Decoder!=null){l.Decoder.Close();l.Decoder.Source=null;}Stage.Children.Remove(l.Box);if(l.Cursor!=null)Stage.Children.Remove(l.Cursor);layers.Remove(id);}
   void ClearLayers(){foreach(string id in layers.Keys.ToArray())Remove(id);}
   public void Dispose(){
    KeyValuePair<Process,string>[] running;

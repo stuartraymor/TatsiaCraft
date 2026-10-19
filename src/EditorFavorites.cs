@@ -12,8 +12,8 @@ public partial class Editor {
  // Favorites: star any preset tile to collect it in the Favorites tool, filtered by Type. Favorites belong to the
  // user, not the project, and are stored in %LOCALAPPDATA%\TasiaCraft\favorites.json. See docs/BEHAVIORS-EVIDENCE.md.
  class PresetEntry { public string Panel,Label,Picture; public Action Apply; public string Key{get{return Panel+"/"+Label;}} }
- static readonly string[] PresetPanels={"Annotations","Visual Effects","Transitions","Animations","Behaviors","Audio Effects","Captions"};
- static readonly string[] ClipPresetPanels={"Visual Effects","Transitions","Animations","Behaviors","Audio Effects"};
+ static readonly string[] PresetPanels={"Annotations","Visual Effects","Transitions","Animations","Behaviors","Cursor Effects","Audio Effects","Captions"};
+ static readonly string[] ClipPresetPanels={"Visual Effects","Transitions","Animations","Behaviors","Cursor Effects","Audio Effects"};
  List<PresetEntry> presetCollector; string favoritesPath=null; List<string> favorites; string favoritesType="All";
  string FavoritesPath{get{return favoritesPath??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"TasiaCraft","favorites.json");}}
  List<string> Favorites(){if(favorites!=null)return favorites;try{favorites=File.Exists(FavoritesPath)?json.Deserialize<List<string>>(File.ReadAllText(FavoritesPath)).Where(k=>!string.IsNullOrWhiteSpace(k)).Distinct().ToList():new List<string>();}catch{favorites=new List<string>();}return favorites;}

@@ -38,6 +38,14 @@ public partial class Editor {
     if(kind=="Sharpen")d.DrawRectangle(null,new Pen(white,2),new Rect(21,12,48,24));
    }
    else if(kind.StartsWith("Behavior:")){string behavior=kind.Substring(9);var word=new FormattedText("Text",System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),behavior=="Pop Up"||behavior=="Scale"?14:19,behavior=="Fade"||behavior=="Drifting"?new SolidColorBrush(Color.FromArgb(150,232,237,240)):white,1.0);double x=behavior=="Fly In"?52:behavior=="Drifting"?30:(90-word.Width)/2,y=behavior=="Sliding"?18:12;if(behavior=="Tremble")d.PushTransform(new RotateTransform(-6,45,24));d.DrawText(word,new Point(x,y));if(behavior=="Tremble")d.Pop();var trail=new Pen(mint,2);if(behavior=="Fly In"){d.DrawLine(trail,new Point(8,19),new Point(45,19));d.DrawLine(trail,new Point(16,27),new Point(45,27));}else if(behavior=="Sliding")d.DrawLine(trail,new Point(45,44),new Point(45,40));else if(behavior=="Pulsating"||behavior=="Pop Up"||behavior=="Scale")d.DrawRectangle(null,trail,new Rect(22,8,46,32));else if(behavior=="Drifting")d.DrawLine(trail,new Point(14,38),new Point(76,38));d.DrawLine(new Pen(B("#e05a5a"),2),new Point(4,46),new Point(86,46));}
+   else if(kind.StartsWith("Cursor:")){string effect=kind.Substring(7);d.DrawRectangle(new LinearGradientBrush(Color.FromRgb(214,140,110),Color.FromRgb(160,90,80),90),null,new Rect(2,2,86,44));var arrow=Geometry.Parse("M44,14 L44,34 L49,29 L52,37 L56,35 L53,28 L59,28 Z");
+    if(effect=="Cursor Highlight")d.DrawEllipse(new SolidColorBrush(Color.FromArgb(170,255,225,77)),null,new Point(46,22),14,14);
+    if(effect=="Cursor Spotlight"){d.DrawGeometry(new SolidColorBrush(Color.FromArgb(160,0,0,0)),null,new CombinedGeometry(GeometryCombineMode.Exclude,new RectangleGeometry(new Rect(2,2,86,44)),new EllipseGeometry(new Point(46,22),14,14)));}
+    if(effect=="Cursor Shadow"){var shadow=arrow.Clone();shadow.Transform=new TranslateTransform(3,3);d.DrawGeometry(new SolidColorBrush(Color.FromArgb(130,0,0,0)),null,shadow);}
+    if(effect=="Cursor Glow")d.DrawGeometry(null,new Pen(new SolidColorBrush(Color.FromRgb(60,227,107)),4),arrow);
+    if(effect=="Cursor Smoothing")d.DrawGeometry(null,new Pen(white,1.5){DashStyle=DashStyles.Dash},Geometry.Parse("M10,40 C25,10 35,40 44,18"));
+    if(effect.Contains("Click")){var color=effect.StartsWith("Left")?Color.FromRgb(229,57,53):effect.EndsWith("Rings")?Color.FromRgb(242,201,76):Color.FromRgb(47,107,255);var pen=new Pen(new SolidColorBrush(color),2);if(effect.EndsWith("Rings"))d.DrawEllipse(null,pen,new Point(44,16),12,12);else if(effect.EndsWith("Target")){d.DrawEllipse(null,pen,new Point(44,16),9,9);d.DrawLine(pen,new Point(32,16),new Point(56,16));d.DrawLine(pen,new Point(44,4),new Point(44,28));}else for(int i=0;i<8;i++){double a=i*Math.PI/4;d.DrawLine(pen,new Point(44+6*Math.Cos(a),16+6*Math.Sin(a)),new Point(44+11*Math.Cos(a),16+11*Math.Sin(a)));}}
+    d.DrawGeometry(effect=="Cursor Color"?new SolidColorBrush(Color.FromRgb(255,208,0)):Brushes.White,new Pen(Brushes.Black,1),arrow);}
    else if(kind=="Zoom in") {d.DrawRectangle(null,outline,new Rect(8,7,55,31));d.DrawRectangle(mint,null,new Rect(35,17,46,25));}
    else if(kind=="Background") {d.DrawRectangle(new LinearGradientBrush(Color.FromRgb(28,50,76),Color.FromRgb(41,126,126),45),null,new Rect(5,5,80,38));d.DrawEllipse(new SolidColorBrush(Color.FromArgb(55,255,255,255)),null,new Point(65,13),21,21);}
    else if(kind=="Reset"||kind=="Remove") {d.DrawEllipse(null,new Pen(muted,2),new Point(45,24),17,17);d.DrawLine(new Pen(white,2),new Point(32,37),new Point(58,11));}
@@ -49,7 +57,7 @@ public partial class Editor {
  }
  void EditPreset(Action<Clip> edit){if(selected==null){Info("Select a timeline clip to apply this preset.");return;}if(SelectedClips().Count>1||TrackLocked(selected)){Info("Open the group and select one unlocked member to apply a preset.");return;}Checkpoint();edit(selected);Refresh();}
  void BuildPalette(string name){
-  PaletteHeading(name,name=="Annotations"?"Click a preset to insert it on the top track.":name=="Captions"?"Editable text and timed SubRip captions.":name=="Behaviors"?"Select a clip, then click a behavior. Each has In, During and Out motion.":"Select a timeline clip, then click a preset.");
+  PaletteHeading(name,name=="Annotations"?"Click a preset to insert it on the top track.":name=="Captions"?"Editable text and timed SubRip captions.":name=="Behaviors"?"Select a clip, then click a behavior. Each has In, During and Out motion.":name=="Cursor Effects"?"Select a screen recording, then click an effect.":"Select a timeline clip, then click a preset.");
   var tiles=new UniformGrid{Columns=3,Margin=new Thickness(4,4,4,10)};library.Children.Add(tiles);Action<string,string,Action> tile=(label,picture,apply)=>AddPresetTile(tiles,name,label,picture,apply);
   if(name=="Annotations"){
    tile("Text","Text",()=>AddText("Your text here"));tile("Rectangle","Rectangle",()=>AddShape("Rectangle"));tile("Ellipse","Ellipse",()=>AddShape("Ellipse"));tile("Arrow","Arrow",()=>AddShape("Arrow"));
@@ -65,6 +73,8 @@ public partial class Editor {
    tile("Normalize","Audio",()=>EditPreset(c=>c.AudioEffect="normalize"));tile("Noise reduction","Audio",()=>EditPreset(c=>c.AudioEffect="noise reduction"));tile("Remove effect","Remove",()=>EditPreset(c=>c.AudioEffect=null));
    tile("Mute","Mute",()=>EditPreset(c=>c.Volume=0));tile("Restore gain","Audio",()=>EditPreset(c=>c.Volume=1));tile("Audio fade","Fade",()=>EditPreset(c=>c.FadeIn=c.FadeOut=Math.Min(.5,c.Duration/2)));
    library.Children.Add(Text("Fade presets affect both audio and video. Gain and fade durations can be adjusted in Properties.",11,muted));
+  }else if(name=="Cursor Effects"){
+   CursorEffectsPalette(tiles,tile);
   }else if(name=="Behaviors"){
    foreach(string behavior in Behaviors.Catalog){string chosen=behavior;tile(chosen,"Behavior:"+chosen,()=>AddBehavior(chosen));}
   }else if(name=="Captions"){

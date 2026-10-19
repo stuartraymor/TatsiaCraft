@@ -10,7 +10,7 @@ $ToolsPath=(Get-Item -LiteralPath $ToolsPath).FullName
 foreach($name in @('ffmpeg.exe','ffprobe.exe')){if(!(Test-Path -LiteralPath (Join-Path $ToolsPath $name))){throw "ToolsPath missing $name"}}
 $targetTools=Join-Path $testRoot 'tools'
 New-Item -ItemType Directory -Path $targetTools -Force | Out-Null
-Get-ChildItem -LiteralPath $ToolsPath -Force | ForEach-Object {Copy-Item -LiteralPath $_.FullName -Destination $targetTools -Recurse -Force}
+& (Join-Path $PSScriptRoot 'link-tools.ps1') -Source $ToolsPath -Destination $targetTools
 $framework='C:\Windows\Microsoft.NET\Framework64\v4.0.30319'
 $references=@('System.dll','System.Core.dll','System.Web.Extensions.dll','System.Drawing.dll','System.Windows.Forms.dll','WPF\WindowsBase.dll','WPF\PresentationCore.dll','WPF\PresentationFramework.dll','System.Xaml.dll')|ForEach-Object{'/r:'+(Join-Path $framework $_)}
 $testExe=Join-Path $testRoot 'ResizeSnapTest.exe'

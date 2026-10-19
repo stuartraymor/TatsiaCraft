@@ -27,8 +27,8 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | 7 | Visual effects and transitions | Small independent subset | Inventory every preset and adjustable parameter; alpha, duration, overlaps, performance |
 | 8 | Text, callouts, shapes, annotations | Basic text and three shapes | Fonts/colors/layout, styling, rotation, resize, object grouping and export |
 | 9 | Audio editing/effects/meters | Gain/fades/proxies; Silence/Restore (0.1.1); audio points with range silencing (0.1.2); meters, ducking and noise tools open | Sample alignment, normalization, envelope points, noise processing, meters, multitrack mixes |
-| 10 | Recorder screen/region/window, camera, mic, system audio | Basic FFmpeg capture; Narration voice recording with meter and timeline sync (0.1.5) | Pause/resume, simultaneous sources, device loss, long sessions, separate tracks, timing |
-| 11 | Cursor recording metadata and cursor effects | Open | Metadata capture, highlighting, smoothing, click effects and zoomed output |
+| 10 | Recorder screen/region/window, camera, mic, system audio | Basic FFmpeg capture; Narration voice recording with meter and timeline sync (0.2.1) | Pause/resume, simultaneous sources, device loss, long sessions, separate tracks, timing |
+| 11 | Cursor recording metadata and cursor effects | Cursor path/shape/click recording and 12 cursor/click effects (0.2.2); remaining effects and latency compensation open | Metadata capture, highlighting, smoothing, click effects and zoomed output |
 | 12 | Captions/transcription and text workflows | SRT import only | Editing/timing/styles, caption formats, recognition quality, language and offline behavior |
 | 13 | Projects, autosave/recovery, portable media, compatibility | JSON projects; bounded Windows lock recovery and transactional Save As tested; native formats open | Atomic writes, missing/corrupt files, legacy data, recovery, media embedding, .tscproj/.trec research |
 | 14 | Export, formats/profiles/quality/hardware/queue | Basic MP4 | All settings, duration/frame/audio/pixels, cancel/failure/source preservation, batch/retry |
@@ -109,4 +109,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 
 - 0.2.0 increment: leading/trailing-bound snapping for moving timeline clips and group selections. [TIMELINE-MOVE-SNAP-EVIDENCE.md](TIMELINE-MOVE-SNAP-EVIDENCE.md) separates the documented beginning/end workflow from independent bounding-span/tie policies. 39 added checks (media-bin/integration378) cover both directions/endpoints, nearest/tie/zoom/bypass, invalid inputs, source/target flags, gapped groups, actual editor move operations, locks, undo/redo/save and preview/export. Current reference priorities, physical gestures and snap-line styling remain open; trimming and individual interior group-edge snapping are not added.
 
-- 0.1.5 increment: Narration tool with microphone selection, live meter, input level, timeline mute, synced voice recording placed on a new track, and a saved script. [NARRATION-EVIDENCE.md](NARRATION-EVIDENCE.md). 40 checks.
+- 0.2.1 increment: Narration tool with microphone selection, live meter, input level, timeline mute, synced voice recording placed on a new track, and a saved script. [NARRATION-EVIDENCE.md](NARRATION-EVIDENCE.md). 40 checks.
+
+- 0.2.2 increment: separate cursor recording and the Cursor Effects tool. [CURSOR-EFFECTS-EVIDENCE.md](CURSOR-EFFECTS-EVIDENCE.md). 60 checks.

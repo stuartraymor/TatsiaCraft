@@ -24,10 +24,10 @@ namespace TasiaCraft {
   public bool IsReady{get{return ready.Task.IsCompleted;}}
   public NarrationCapture(string inputArgs,string outputPath,double gain){
    if(double.IsNaN(gain)||double.IsInfinity(gain)||gain<0||gain>4)throw new ArgumentException("Invalid input level");OutputPath=outputPath;
-   string g=gain.ToString("0.###",CultureInfo.InvariantCulture),meter="astats=metadata=1:reset=1:length="+Window.ToString(CultureInfo.InvariantCulture)+",ametadata=print:key=lavfi.astats.Overall.RMS_level:file=-";
-   string args="-hide_banner -nostats -y "+inputArgs+(outputPath==null?" -af volume="+g+","+meter+" -f null -":" -filter_complex \"[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume="+g+",asplit=2[rec][mon];[mon]"+meter+"[m]\" -map \"[rec]\" -c:a pcm_s16le "+Engine.Quote(outputPath)+" -map \"[m]\" -f null -");
+   string g=gain.ToString("0.###",CultureInfo.InvariantCulture),meter="asetnsamples=n=4800:p=0,astats=metadata=1:reset=1,ametadata=print:file=-";
+   string args="-hide_banner -nostats -y "+inputArgs+(outputPath==null?" -af aformat=sample_rates=48000:channel_layouts=mono,volume="+g+","+meter+" -f null -":" -filter_complex \"[0:a]aformat=sample_rates=48000:channel_layouts=mono,volume="+g+",asplit=2[rec][mon];[mon]"+meter+"[m]\" -map \"[rec]\" -c:a pcm_s16le "+Engine.Quote(outputPath)+" -map \"[m]\" -f null -");
    process=new Process{StartInfo=new ProcessStartInfo(Engine.Tool("ffmpeg"),args){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true,StandardOutputEncoding=new UTF8Encoding(false),StandardErrorEncoding=new UTF8Encoding(false)},EnableRaisingEvents=true};
-   process.OutputDataReceived+=(s,e)=>{if(e.Data==null)return;int i=e.Data.IndexOf("RMS_level=",StringComparison.Ordinal);if(i<0)return;double db;string v=e.Data.Substring(i+10);if(!double.TryParse(v,NumberStyles.Float,CultureInfo.InvariantCulture,out db))db=v.Contains("inf")?double.NegativeInfinity:-120;ready.TrySetResult(true);var handler=Level;if(handler!=null)handler(db);};
+   process.OutputDataReceived+=(s,e)=>{if(e.Data==null)return;const string key="lavfi.astats.1.RMS_level=";if(!e.Data.StartsWith(key,StringComparison.Ordinal))return;double db;string v=e.Data.Substring(key.Length);if(!double.TryParse(v,NumberStyles.Float,CultureInfo.InvariantCulture,out db))db=v.Contains("inf")?double.NegativeInfinity:-120;ready.TrySetResult(true);var handler=Level;if(handler!=null)handler(db);};
    process.ErrorDataReceived+=(s,e)=>{if(e.Data!=null)lock(errors){errors.AppendLine(e.Data);if(errors.Length>20000)errors.Remove(0,errors.Length-20000);}};
    process.Exited+=(s,e)=>ready.TrySetResult(false);
   }

@@ -10,7 +10,7 @@ if($ToolsPath){
  $ToolsPath=(Get-Item -LiteralPath $ToolsPath).FullName
  $target=Join-Path $testRoot 'tools'
  New-Item -ItemType Directory -Path $target -Force | Out-Null
- Get-ChildItem -LiteralPath $ToolsPath -Force | ForEach-Object {Copy-Item -LiteralPath $_.FullName -Destination $target -Recurse -Force}
+ & (Join-Path $PSScriptRoot 'link-tools.ps1') -Source $ToolsPath -Destination $target
 }
 if(!(Test-Path -LiteralPath (Join-Path $testRoot 'tools\ffmpeg.exe'))){throw 'Supply -ToolsPath with compatible FFmpeg tools.'}
 $framework='C:\Windows\Microsoft.NET\Framework64\v4.0.30319'

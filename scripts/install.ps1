@@ -28,7 +28,7 @@ New-Item -ItemType Directory -Path $staging | Out-Null
 try {
     Copy-Item -LiteralPath $executable.FullName -Destination (Join-Path $staging 'TasiaCraft.exe')
     foreach ($document in @('LICENSE','README.md','VERSION')) { Copy-Item -LiteralPath (Join-Path $sourceRoot $document) -Destination $staging }
-    if ($ToolsPath) { Copy-Item -LiteralPath $ToolsPath -Destination (Join-Path $staging 'tools') -Recurse }
+    if ($ToolsPath) { & (Join-Path $PSScriptRoot 'link-tools.ps1') -Source $ToolsPath -Destination (Join-Path $staging 'tools') }
     $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse | Sort-Object FullName | ForEach-Object {
         [ordered]@{ path = $_.FullName.Substring($staging.Length + 1).Replace('\','/'); sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash; bytes = $_.Length }
     })

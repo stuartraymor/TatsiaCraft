@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.1.5
+## 0.2.2
+
+- Add the Cursor Effects tool with Cursor, Left Click and Right Click tabs. It has 12 effects: Cursor Color, Glow, Highlight, Shadow, Smoothing and Spotlight, plus Left/Right Click Burst 1, Rings and Target. Each has its own size and color settings, and cursor scale and opacity are set per clip.
+- Screen recordings now capture the cursor separately (position, shape and clicks in a .cursor.json sidecar), so it can be restyled or hidden later. Preview and export draw it with the same code.
+- Fix: the Record button keeps its icon after a recording finishes. The Narration meter now really reads 100 ms windows; before, it reported every ~21 ms audio frame, so the take lead-in trim was misaligned. Correct the 0.2.1 Narration version labels.
+- Test suites and the installer now hard-link the FFmpeg tools instead of copying them, saving about 100 MB per test folder and 150 MB per installed version on the same drive.
+- Add 60 cursor checks covering recorder sampling, mapping and preview/export pixels. The remaining reference cursor and click effects remain open.
+
+## 0.2.1
 
 - Add the Narration tool in reference order and wording. It has a microphone list, a live input level meter, an input volume slider, Mute timeline during recording, Start/Stop Voice Recording, and a script box saved with the project.
 - The timeline plays from the playhead while recording, timed to when audio first arrives. The take goes onto a new top track at the start position as one undo step, and exports with the video.
