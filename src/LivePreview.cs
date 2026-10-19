@@ -251,7 +251,7 @@ namespace TasiaCraft {
    l.Box.IsHitTestVisible=l.Active&&!audio;
    if(l.Decoder!=null&&l.Ready&&!l.Failed){
     var d=l.Decoder;double target=c.In+elapsed*c.Speed;
-    d.SpeedRatio=c.Speed;d.Volume=l.Active&&c.Stream!="video"?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed))):0;
+    d.SpeedRatio=c.Speed;d.Volume=l.Active&&c.Stream!="video"&&!c.Silenced?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed))):0;
     if(seek||!l.Running||Math.Abs(d.Position.TotalSeconds-target)>.22)d.Position=TimeSpan.FromSeconds(target);
     if(IsPlaying&&l.Active){if(!l.Running){d.Play();l.Running=true;}}else if(l.Running){d.Pause();l.Running=false;}
    }

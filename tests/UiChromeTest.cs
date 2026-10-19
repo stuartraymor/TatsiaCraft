@@ -36,7 +36,7 @@ public static class UiChromeTest {
    Require(Items(menu).Select(Header).SequenceEqual(new[]{"File","Edit","Modify","View","Export","Help"}),"top menu order matches reference");
    Require(Items(Find(menu,"File")).Select(Header).SequenceEqual(new[]{"New Project","New Project from Template...","Open Project...","Recent Projects","Home","Save","Save As...","Import","Project Settings...","New Recording...","Exit"}),"File menu wording and order");
    Require(Items(Find(Find(menu,"File"),"Import")).Select(Header).SequenceEqual(new[]{"Media...","Captions..."}),"File Import submenu wording");
-   Require(Items(Find(menu,"Edit")).Select(Header).Take(11).SequenceEqual(new[]{"Undo","Redo","Cut","Copy","Paste","Duplicate","Delete","Ripple Delete","Split Selected","Separate Audio and Video","Group"}),"Edit menu leading wording and order");
+   Require(Items(Find(menu,"Edit")).Select(Header).Take(12).SequenceEqual(new[]{"Undo","Redo","Cut","Copy","Paste","Duplicate","Delete","Ripple Delete","Split Selected","Stitch Selected Media","Separate Audio and Video","Group"}),"Edit menu leading wording and order");
    Require(Items(Find(Find(menu,"Edit"),"Jump To")).Select(Header).SequenceEqual(new[]{"Beginning","End","Next Media","Previous Media","Next Marker","Previous Marker"}),"Edit Jump To wording");
    Require(Items(Find(Find(menu,"View"),"Tools")).Select(Header).SequenceEqual((string[])Field(editor,"NavigationTools")),"View Tools lists every navigation tool");
    Require(Items(Find(Find(menu,"View"),"Timeline")).Select(Header).SequenceEqual(new[]{"Zoom In","Zoom Out","Zoom to Fit"}),"View Timeline wording");

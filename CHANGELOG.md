@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1
+
+- Silence Audio (Shift+S) and Restore Audio (Shift+R) from the clip context menu remove and restore a clip's audio in preview and export without changing its gain. Silenced clips are labeled on the timeline.
+- Stitch Selected Media (Ctrl+Alt+I, Edit menu, context menu) rejoins selected clips that touch and continue the same media with matching settings, restoring the original clip exactly.
+- Ripple Insert: Shift-drag the playhead to insert blank time on every unlocked track. Clips crossing the playhead split, and later clips and markers move right. It is one undo step, and inserting past the 24-hour limit is rejected.
+- Fix: Edit menu now orders Split Selected, Stitch Selected Media, Separate Audio and Video as in the reference.
+- Add 68 checks with decoded audio and picture comparisons. Audio-point envelopes, range-based silencing and stitching non-continuous media (as in the reference) remain open.
+
 ## 0.1.0
 
 - Ripple Delete (Ctrl+Backspace, Edit menu, clip context menu) removes the selected clips and closes their gap on each affected track. Other tracks and markers stay put, and it is one undo step.
