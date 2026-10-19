@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Add the Favorites tool. A star on every preset tile adds it to Favorites, with a Type filter and the reference empty state. F opens it. Favorites are saved per user.
+- Add the Behaviors tool and Modify > Add Behavior with 8 behaviors: Drifting, Fade, Fly In, Pop Up, Pulsating, Scale, Sliding and Tremble. Each has In and Out durations and an on/off toggle in Properties, and preview and export render them identically for media and text. Navigation order now matches the reference, with Favorites first and Behaviors after Animations.
+- Add 80 behavior and favorites checks, with export/preview pixel probes. Explode, Jump And Fall, Reveal, Shifting, Wiggle and the Style/Movement options remain open.
+
 ## 0.1.3
 
 - Recover export publication from short-lived Windows sharing/lock errors with the existing bounded atomic commit policy: five attempts, up to 1.5 seconds of delay, only HRESULT32/33/1175.

@@ -7,7 +7,7 @@ using System.Windows.Markup;
 namespace TasiaCraft {
 public partial class Editor {
  // Tool order, wording and window caption follow the observed reference layout; see docs/UI-WORDING-EVIDENCE.md.
- static readonly string[] NavigationTools={"Media","Library","Annotations","Visual Effects","Transitions","Animations","Audio Effects","Captions"};
+ static readonly string[] NavigationTools={"Favorites","Media","Library","Annotations","Visual Effects","Transitions","Animations","Behaviors","Audio Effects","Captions"};
  TextBlock frameRate;
  string WindowTitle(){return ProductInfo.DisplayName+" - "+(projectPath==""?"Untitled Project":Path.GetFileName(projectPath))+(dirty?"*":"");}
  void UpdateWindowTitle(){Title=WindowTitle();}
@@ -27,6 +27,7 @@ public partial class Editor {
   "Playback\n  Spacebar  Play / Pause\n  , / .  Previous / Next frame\n  Ctrl+Alt+, / Ctrl+Alt+.  Previous / Next media\n  Ctrl+[ / Ctrl+]  Previous / Next marker\n  Ctrl+Home / Ctrl+End  Jump to beginning / end\n\n"+
   "Markers\n  Ctrl+M  Show or hide the Marker tray\n  Shift+M  Add Timeline Marker at the playhead\n  Click the tray to add; drag to move; double-click or right-click to rename or delete\n\n"+
   "View\n  Ctrl+2  Show or hide Properties\n  Ctrl+= / Ctrl+-  Canvas zoom in / out\n  Ctrl+Shift+= / Ctrl+Shift+-  Timeline zoom in / out\n  Ctrl+Shift+7  Bring all media on timeline into view\n  Ctrl+;  Enable Canvas Snapping\n\n"+
+  "Tools\n  F  Favorites (click a tile's star to add it)\n  Behaviors: select a clip and click a behavior; adjust In/Out in Properties\n\n"+
   "Export\n  Ctrl+Shift+F  Export Frame As\n  Markers are saved in exported MP4 files as chapters\n\n"+
   "Canvas: drag to move, corner handles resize, the side handle rotates. Crop mode: drag media inside a fixed crop; drag edges to trim.\nTimeline: drag clip edges to trim. Shift-drag ripple moves without snapping; Shift also disables snapping for markers and the playhead.",
   "Keyboard Shortcuts");}

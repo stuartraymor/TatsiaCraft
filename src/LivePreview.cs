@@ -237,7 +237,7 @@ namespace TasiaCraft {
   static double Fade(Clip c,double t){double a=1;if(c.FadeIn>0)a*=Math.Min(1,Math.Max(0,t/c.FadeIn));if(c.FadeOut>0)a*=Math.Min(1,Math.Max(0,(c.Duration-t)/c.FadeOut));return a;}
   void Apply(Layer l,bool seek){
    var c=l.Clip;double elapsed=Math.Max(0,Math.Min(c.Duration,position-c.Start));double k=c.Animate?elapsed/c.Duration:0;
-   double scale=c.Scale+(c.EndScale-c.Scale)*k,x=c.X+(c.EndX-c.X)*k,y=c.Y+(c.EndY-c.Y)*k;
+   var behavior=Behaviors.Evaluate(c,elapsed,project.Width,project.Height);double scale=(c.Scale+(c.EndScale-c.Scale)*k)*behavior.Scale,x=c.X+(c.EndX-c.X)*k+behavior.X,y=c.Y+(c.EndY-c.Y)*k+behavior.Y;
    double w=l.Width>0?l.Width:project.Width,h=l.Height>0?l.Height:project.Height;
    bool text=!string.IsNullOrEmpty(c.Text),audio=l.Media!=null&&l.Media.Kind=="audio";
    if(text){var tb=(TextBlock)l.Visual;if(tb.Text!=c.Text){tb.Text=c.Text;tb.Measure(new Size(double.PositiveInfinity,double.PositiveInfinity));l.Width=tb.DesiredSize.Width;l.Height=tb.DesiredSize.Height;w=l.Width;h=l.Height;}}
@@ -247,7 +247,7 @@ namespace TasiaCraft {
    Canvas.SetLeft(l.Box,(project.Width-w)/2+x);Canvas.SetTop(l.Box,(project.Height-h)/2+y);
    var transforms=new TransformGroup();transforms.Children.Add(new ScaleTransform(scale,scale));transforms.Children.Add(new RotateTransform(text?0:c.Rotation));l.Box.RenderTransform=transforms;
    Panel.SetZIndex(l.Box,l.Z);
-   l.Box.Opacity=l.Active&&!audio?Math.Max(0,Math.Min(1,c.Opacity))*Fade(c,elapsed):0;
+   l.Box.Opacity=l.Active&&!audio?Math.Max(0,Math.Min(1,c.Opacity))*Fade(c,elapsed)*behavior.Alpha:0;
    l.Box.IsHitTestVisible=l.Active&&!audio;
    if(l.Decoder!=null&&l.Ready&&!l.Failed){
     var d=l.Decoder;double target=c.In+elapsed*c.Speed;
