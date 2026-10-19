@@ -1,4 +1,4 @@
-# Camtasia workflow reproduction plan
+﻿# Camtasia workflow reproduction plan
 
 Target: installed Camtasia 26.2.2.19936 on Windows. Goal: independently implement matching features, placement, workflow and output, then validate each against controlled observations. Current status: partial development preview. Full parity is not established.
 
@@ -94,3 +94,5 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 
 
 - 0.1.6 increment: Media Bin sort direction and stable visible selection through view changes/refresh, with stale selection cleared for other projects and filtered-out entries. [MEDIA-SORT-EVIDENCE.md](MEDIA-SORT-EVIDENCE.md) separates documented direction controls from independent collation/selection policy. 29 additional checks (media-bin75) cover actual controls, Unicode/ties, no model/dirty/undo mutation, Relink eligibility and preview/decoded export. Exact reference26.2.2 collation/options/layout and broader keyboard/focus parity remain open.
+
+- 0.1.7 increment: independent Media Bin source preview via double-click/context, with play/pause, stop, seek and disposal; explicit context insertion retains the former insertion workflow. [MEDIA-PREVIEW-EVIDENCE.md](MEDIA-PREVIEW-EVIDENCE.md) separates historical TechSmith documentation from current reference runtime unknowns and independent modal/paused choices. 78 added checks (media-bin153) cover actual WPF handlers, decoded image pixels, opened audio/video decoders, transport, corrupted-source reporting, unchanged timeline/undo/save/main preview/export and guarded insertion. Native gesture/layout/autoplay, full-screen/volume controls and audible quality remain open.

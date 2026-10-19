@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$ToolsPath)
+﻿param([Parameter(Mandatory=$true)][string]$ToolsPath)
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path $PSScriptRoot -Parent
 & (Join-Path $PSScriptRoot 'build.ps1')
@@ -13,7 +13,7 @@ Get-ChildItem -LiteralPath $ToolsPath -Force | ForEach-Object {Copy-Item -Litera
 $framework='C:\Windows\Microsoft.NET\Framework64\v4.0.30319'
 $references=@('System.dll','System.Core.dll','System.Web.Extensions.dll','System.Drawing.dll','System.Windows.Forms.dll','WPF\WindowsBase.dll','WPF\PresentationCore.dll','WPF\PresentationFramework.dll','System.Xaml.dll')|ForEach-Object{'/r:'+(Join-Path $framework $_)}
 $testExe=Join-Path $testRoot 'MediaBinTest.exe'
-& (Join-Path $framework 'csc.exe') /nologo /target:winexe /platform:x64 ('/r:'+$editor) ('/out:'+$testExe) @references (Join-Path $repoRoot 'tests\MediaBinTest.cs')
+& (Join-Path $framework 'csc.exe') /nologo /target:winexe /platform:x64 ('/r:'+$editor) ('/out:'+$testExe) @references (Join-Path $repoRoot 'tests\MediaBinTest.cs') (Join-Path $repoRoot 'tests\MediaPreviewTest.cs')
 if($LASTEXITCODE -ne 0){throw 'Media-bin test compilation failed'}
 $process=Start-Process -FilePath $testExe -ArgumentList ('"'+$testRoot+'"') -WindowStyle Hidden -PassThru
 if(!$process.WaitForExit(60000)){Stop-Process -Id $process.Id;throw 'Media-bin test timed out'}

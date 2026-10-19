@@ -1,4 +1,4 @@
-# TatsiaCraft
+﻿# TatsiaCraft
 
 An independent Windows video editor written in C# and WPF, with an external FFmpeg media pipeline. The existing application's executable, namespace and project format currently retain the name **TasiaCraft**.
 
@@ -24,6 +24,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 
 - Multitrack editing, move/trim/split, copy/paste, undo/redo and JSON projects.
 - Live composition and playback with source effect proxies.
+- Media Bin source preview by double-click/context, with independent playback, seeking and decoder cleanup; explicit context insertion and drag/drop.
 - Canvas movement, anchored resizing, rotation and independent view zoom up to 2000%.
 - Image/video cropping with live handles and numeric properties, retained source placement and transparent export.
 - Cropped-media corner/edge resizing anchored to the opposite visible crop handle.

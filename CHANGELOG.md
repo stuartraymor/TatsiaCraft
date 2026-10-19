@@ -1,4 +1,10 @@
-# Changelog
+﻿# Changelog
+
+## 0.1.7
+
+- Preview a single Media Bin source through double-click or Preview, with an independent fit player, play/pause, stop, seek and position/duration. Previewing no longer inserts a timeline clip. Use Add to Timeline at Playhead or drag/drop to insert.
+- Clone source metadata for preview; disable canvas edits, show missing/invalid/decoder errors, guard busy and stale/multiple selection, and release decoders on close. Keep timeline state, project data, undo and export unchanged.
+- Add 78 focused checks (153 media-bin checks), including actual WPF context/double-click handlers, image pixels, opened audio/video decoders, transport controls, error reporting, cleanup and preview/export/save preservation. Current Camtasia dialog/layout/autoplay parity and audible quality remain unmeasured.
 
 ## 0.1.6
 
