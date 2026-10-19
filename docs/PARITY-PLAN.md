@@ -83,3 +83,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 - 0.1.1 increment: Silence/Restore Audio, Stitch Selected Media and playhead Ripple Insert. [AUDIO-STITCH-EVIDENCE.md](AUDIO-STITCH-EVIDENCE.md) records the observed menu wording and shortcuts, and that reference Silence leaves Gain at 100% (it uses audio points). TatsiaCraft uses a separate silenced flag, stitches continuous media only, and splits clips that cross a ripple insert. 68 checks.
 
 - 0.1.2 increment: audio points stored in source time, a green/red playhead time range, and range Silence/Restore. Also fixes an existing export bug that corrupted audio for clips with both a source offset and a later timeline start. [AUDIO-POINTS-EVIDENCE.md](AUDIO-POINTS-EVIDENCE.md). 69 checks.
+
+
+- 0.1.3 increment: bounded atomic export commit recovery, reusing the save retry policy and preserving existing destination bytes on permanent errors. [EXPORT-COMMIT-EVIDENCE.md](EXPORT-COMMIT-EVIDENCE.md) records the observed resize/export failure and independent repair. 24 real-lock/decoded-output checks cover commit status, cleanup, source/model preservation and invalid destinations. Export profiles/queue/cancellation during finalization, network filesystems and crash recovery remain open.

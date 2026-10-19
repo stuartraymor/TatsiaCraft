@@ -3,6 +3,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'version.ps1')
 $releaseRoot=Split-Path $PSScriptRoot -Parent
 Push-Location $releaseRoot
+$priorReleaseTree=$env:TATSIACRAFT_RELEASE_TREE
 try {
  $env:GIT_TERMINAL_PROMPT='0'
  $branch=(& git branch --show-current).Trim()
@@ -53,6 +54,8 @@ try {
   if((Get-Item -LiteralPath $preservedApp).VersionInfo.ProductVersion -ne $version){throw 'Preserved release artifact version mismatch'}
   Copy-Item -LiteralPath $preservedApp -Destination 'dist\TasiaCraft\TasiaCraft.exe'
  }else{
+  $env:TATSIACRAFT_RELEASE_TREE=$releaseTree
+  & (Join-Path $PSScriptRoot 'test-exportcommit.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-audiopoints.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-audiostitch.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-ripple.ps1') -ToolsPath $ToolsPath
@@ -131,4 +134,4 @@ try {
  $remoteHead=(& git ls-remote origin refs/heads/main).Split()[0]
  if($LASTEXITCODE -ne 0 -or $remoteHead -ne $head -or $verified.draft -or $verified.tag_name -ne $tag -or @($verified.assets | Where-Object state -eq 'uploaded').Count -lt 2){throw 'Remote revision verification failed'}
  Write-Output ('Published '+$verified.html_url)
-} finally {Pop-Location}
+} finally {$env:TATSIACRAFT_RELEASE_TREE=$priorReleaseTree;Pop-Location}

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3
+
+- Recover export publication from short-lived Windows sharing/lock errors with the existing bounded atomic commit policy: five attempts, up to 1.5 seconds of delay, only HRESULT32/33/1175.
+- Keep the previous output intact on persistent failures and clean the temporary MP4. Show Finalizing export before commit and report completion only after success. Project saves reuse the same helper.
+- Build releases from the staged C# source list and reject tracked/index changes during verification, keeping unrelated untracked work out of published executables.
+- Add 24 checks using real temporary/permanent no-delete locks, read-only/missing destinations, original-byte/source protection, temporary cleanup and decoded picture/audio/duration. This repair does not establish reference export internals or network-filesystem/crash recovery parity.
+
+
 ## 0.1.2
 
 - Add audio points (volume envelopes) on audio clips. Double-click the green level line to add a point, drag points to change time and level, right-click to delete, and use Modify > Remove > All Audio Points to clear them. Points follow the source audio through trims, splits, stitches, ripple inserts and speed changes, and apply in preview and export.
