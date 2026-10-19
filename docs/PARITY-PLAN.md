@@ -26,7 +26,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | 6 | Animation/keyframes/easing and Behaviors | Simple transform endpoints only | All catalogs, interpolation, parameter ranges, overlapping effects and rendered output |
 | 7 | Visual effects and transitions | Small independent subset | Inventory every preset and adjustable parameter; alpha, duration, overlaps, performance |
 | 8 | Text, callouts, shapes, annotations | Basic text and three shapes | Fonts/colors/layout, styling, rotation, resize, object grouping and export |
-| 9 | Audio editing/effects/meters | Basic gain/fades/proxies | Sample alignment, normalization, envelope points, noise processing, meters, multitrack mixes |
+| 9 | Audio editing/effects/meters | Gain/fades/proxies; Silence/Restore (0.1.1); audio points with range silencing (0.1.2); meters, ducking and noise tools open | Sample alignment, normalization, envelope points, noise processing, meters, multitrack mixes |
 | 10 | Recorder screen/region/window, camera, mic, system audio | Basic FFmpeg capture | Pause/resume, simultaneous sources, device loss, long sessions, separate tracks, timing |
 | 11 | Cursor recording metadata and cursor effects | Open | Metadata capture, highlighting, smoothing, click effects and zoomed output |
 | 12 | Captions/transcription and text workflows | SRT import only | Editing/timing/styles, caption formats, recognition quality, language and offline behavior |
@@ -81,3 +81,5 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 - 0.1.0 increment: Ripple Delete, Shift-drag ripple move, and Separate Audio and Video with independently playable stream halves. [RIPPLE-EVIDENCE.md](RIPPLE-EVIDENCE.md) records the observed context/Edit menu entries and the live separation result (new track directly above, both halves selected, one undo). Ripple Delete and ripple move follow the documented workflow and were not measured live. 76 checks cover decoded export, preview and editor behavior.
 
 - 0.1.1 increment: Silence/Restore Audio, Stitch Selected Media and playhead Ripple Insert. [AUDIO-STITCH-EVIDENCE.md](AUDIO-STITCH-EVIDENCE.md) records the observed menu wording and shortcuts, and that reference Silence leaves Gain at 100% (it uses audio points). TatsiaCraft uses a separate silenced flag, stitches continuous media only, and splits clips that cross a ripple insert. 68 checks.
+
+- 0.1.2 increment: audio points stored in source time, a green/red playhead time range, and range Silence/Restore. Also fixes an existing export bug that corrupted audio for clips with both a source offset and a later timeline start. [AUDIO-POINTS-EVIDENCE.md](AUDIO-POINTS-EVIDENCE.md). 69 checks.

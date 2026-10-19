@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- Add audio points (volume envelopes) on audio clips. Double-click the green level line to add a point, drag points to change time and level, right-click to delete, and use Modify > Remove > All Audio Points to clear them. Points follow the source audio through trims, splits, stitches, ripple inserts and speed changes, and apply in preview and export.
+- Add a time range from the playhead's green start and red end handles. Silence Audio (Shift+S) with a range silences just that span with short ramps, on the selected clips or on every overlapping audio clip. Restore Audio (Shift+R) with a range removes those points. Without a range, Restore also clears a clip's audio points.
+- Fix: exports of audio clips with both a source offset and a later timeline start produced a corrupt audio stream. Mixed audio is now retimed correctly.
+- Add 69 checks with time-windowed loudness measured on decoded exports. Exact reference point gestures and scale remain unmeasured.
+
 ## 0.1.1
 
 - Silence Audio (Shift+S) and Restore Audio (Shift+R) from the clip context menu remove and restore a clip's audio in preview and export without changing its gain. Silenced clips are labeled on the timeline.

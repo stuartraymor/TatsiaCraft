@@ -34,7 +34,7 @@ namespace TasiaCraft {
    foreach(int track in tracks){
     int inserted=track+1;foreach(var c in p.Clips)if(c.Track>=inserted)c.Track++;foreach(var states in new[]{p.HiddenTracks,p.LockedTracks,p.SnapDisabledTracks})for(int i=0;i<states.Count;i++)if(states[i]>=inserted)states[i]++;p.TrackCount++;
     foreach(var source in sources.Where(c=>c.Track==track)){
-     var audio=new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<Clip>(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(source));audio.Id=Guid.NewGuid().ToString("N");audio.Track=inserted;audio.Stream="audio";source.Stream="video";
+     var audio=new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<Clip>(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(source));audio.Id=Guid.NewGuid().ToString("N");audio.Track=inserted;audio.Stream="audio";source.Stream="video";source.AudioPoints=new List<AudioPoint>();
      audio.Effect=null;audio.Animate=false;audio.Rotation=0;audio.CropLeft=audio.CropTop=audio.CropRight=audio.CropBottom=0;audio.Scale=1;audio.X=audio.Y=0;audio.EndScale=1;audio.EndX=audio.EndY=0;audio.Opacity=1;audio.NativeSize=false;source.AudioEffect=null;
      p.Clips.Insert(p.Clips.IndexOf(source)+1,audio);var group=ClipGroups.ForClip(p,source);if(group!=null)group.ClipIds.Add(audio.Id);created.Add(audio);
     }
@@ -44,15 +44,16 @@ namespace TasiaCraft {
   static readonly System.Web.Script.Serialization.JavaScriptSerializer json=new System.Web.Script.Serialization.JavaScriptSerializer();
   public static bool HasPlayableAudio(Project p,Clip c){if(c==null||!string.IsNullOrEmpty(c.Text)||c.Stream=="video")return false;var m=p.Media.FirstOrDefault(x=>x.Id==c.MediaId);return m!=null&&m.HasAudio;}
   // Silence Audio / Restore Audio: a per-clip flag that removes the clip's audio without changing its gain.
-  public static int SetSilenced(Project p,IEnumerable<Clip> clips,bool silenced){List<Clip> list;Members(p,clips,out list);var targets=list.Where(c=>HasPlayableAudio(p,c)&&c.Silenced!=silenced).ToList();if(targets.Any(c=>p.LockedTracks.Contains(c.Track)))throw new InvalidOperationException("Track is locked.");foreach(var c in targets)c.Silenced=silenced;return targets.Count;}
+  public static int SetSilenced(Project p,IEnumerable<Clip> clips,bool silenced){List<Clip> list;Members(p,clips,out list);var targets=list.Where(c=>HasPlayableAudio(p,c)&&(silenced?!c.Silenced:c.Silenced||AudioEnvelope.Points(c).Count>0)).ToList();if(targets.Any(c=>p.LockedTracks.Contains(c.Track)))throw new InvalidOperationException("Track is locked.");foreach(var c in targets){c.Silenced=silenced;if(!silenced)AudioEnvelope.Clear(c);}return targets.Count;}
   // Splits a clip at a project time, keeping source continuity; the right part joins the clip's group.
   public static Clip SplitAt(Project p,Clip c,double time){double offset=time-c.Start;if(offset<=1e-9||offset>=c.Duration-1e-9)return null;var right=json.Deserialize<Clip>(json.Serialize(c));right.Id=Guid.NewGuid().ToString("N");right.Start=time;right.In+=offset*c.Speed;right.Duration-=offset;c.Duration=offset;c.FadeOut=0;right.FadeIn=0;c.FadeIn=Math.Min(c.FadeIn,c.Duration);right.FadeOut=Math.Min(right.FadeOut,right.Duration);p.Clips.Insert(p.Clips.IndexOf(c)+1,right);var group=ClipGroups.ForClip(p,c);if(group!=null)group.ClipIds.Add(right.Id);return right;}
   static bool Same(double a,double b){return Math.Abs(a-b)<1e-6;}
+  static bool SameEnvelope(Clip a,Clip b){return json.Serialize(AudioEnvelope.Points(a))==json.Serialize(AudioEnvelope.Points(b));}
   static bool Continuous(Clip a,Clip b){return a.MediaId!=null&&a.MediaId==b.MediaId&&a.Track==b.Track&&a.Stream==b.Stream&&Same(a.Start+a.Duration,b.Start)&&Same(a.Speed,b.Speed)&&Same(a.In+a.Duration*a.Speed,b.In)&&!a.Animate&&!b.Animate&&a.NativeSize==b.NativeSize&&a.Silenced==b.Silenced&&a.Effect==b.Effect&&a.AudioEffect==b.AudioEffect&&Same(a.Volume,b.Volume)&&Same(a.Opacity,b.Opacity)&&Same(a.Scale,b.Scale)&&Same(a.X,b.X)&&Same(a.Y,b.Y)&&Same(a.Rotation,b.Rotation)&&Same(a.CropLeft,b.CropLeft)&&Same(a.CropTop,b.CropTop)&&Same(a.CropRight,b.CropRight)&&Same(a.CropBottom,b.CropBottom);}
   // Stitch Selected Media: joins selected clips that touch on a track and continue the same source, restoring one clip.
   public static int Stitch(Project p,IEnumerable<Clip> clips){
    List<Clip> list;Members(p,clips,out list);if(list.Any(c=>p.LockedTracks.Contains(c.Track)))throw new InvalidOperationException("Track is locked.");int joined=0;
-   foreach(var track in list.GroupBy(c=>c.Track)){var ordered=track.OrderBy(c=>c.Start).ToList();for(int i=0;i+1<ordered.Count;){var a=ordered[i];var b=ordered[i+1];if(Continuous(a,b)&&ClipGroups.ForClip(p,a)==ClipGroups.ForClip(p,b)){a.Duration+=b.Duration;a.FadeOut=b.FadeOut;p.Clips.Remove(b);foreach(var g in p.Groups)g.ClipIds.Remove(b.Id);ordered.RemoveAt(i+1);joined++;}else i++;}}
+   foreach(var track in list.GroupBy(c=>c.Track)){var ordered=track.OrderBy(c=>c.Start).ToList();for(int i=0;i+1<ordered.Count;){var a=ordered[i];var b=ordered[i+1];if(Continuous(a,b)&&ClipGroups.ForClip(p,a)==ClipGroups.ForClip(p,b)&&SameEnvelope(a,b)){a.Duration+=b.Duration;a.FadeOut=b.FadeOut;p.Clips.Remove(b);foreach(var g in p.Groups)g.ClipIds.Remove(b.Id);ordered.RemoveAt(i+1);joined++;}else i++;}}
    ClipGroups.Prune(p);return joined;
   }
   // Ripple Insert: adds blank time at a point on every unlocked track; crossing clips split there, later clips and markers move right.
