@@ -24,6 +24,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 
 - Multitrack editing, move/trim/split, copy/paste, undo/redo and JSON projects.
 - Live composition and playback with source effect proxies.
+- Bidirectional Media Bin/timeline source selection, including group units and separated streams.
 - Media Bin source preview by double-click/context, with independent playback, seeking and decoder cleanup; explicit context insertion and drag/drop.
 - Canvas movement, anchored resizing, rotation and independent view zoom up to 2000%.
 - Image/video cropping with live handles and numeric properties, retained source placement and transparent export.

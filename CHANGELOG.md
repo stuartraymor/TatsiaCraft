@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.8
+
+- Add Media Bin Select on Timeline and timeline Select in Media Bin context commands. Find every selected source reference, keep root groups together, and reveal distant timeline results without seeking. Reverse navigation reveals source entries through type filters while retaining sort/layout.
+- Keep missing-file references navigable, distinguish aliases by media ID, support separated streams and multiple selections, and guard empty/unused/stale/busy cases. Navigation preserves project data, playback, head, source files and undo/redo.
+- Add 38 focused checks (191 media-bin checks), including actual context handlers, distant scrolling, hidden/locked/grouped clips, preview/export and save/reopen preservation. Exact current reference selection, focus and scrolling policies remain unmeasured.
+
 ## 0.1.7
 
 - Preview a single Media Bin source through double-click or Preview, with an independent fit player, play/pause, stop, seek and position/duration. Previewing no longer inserts a timeline clip. Use Add to Timeline at Playhead or drag/drop to insert.

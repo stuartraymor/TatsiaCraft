@@ -3,6 +3,14 @@ using System.Linq;
 using System.Collections.Generic;
 namespace TasiaCraft {
  public static class MediaBinOperations {
+  public static List<Clip> TimelineReferences(Project project,IEnumerable<Media> selection){
+   if(project==null||project.Media==null||project.Clips==null||selection==null)throw new ArgumentException("Choose a valid project and media selection.");
+   var ids=new HashSet<string>(selection.Where(m=>m!=null&&project.Media.Contains(m)).Select(m=>m.Id));return project.Clips.Where(c=>c!=null&&ids.Contains(c.MediaId)).ToList();
+  }
+  public static List<Media> SourceReferences(Project project,IEnumerable<Clip> selection){
+   if(project==null||project.Media==null||project.Clips==null||selection==null)throw new ArgumentException("Choose a valid project and clip selection.");
+   var ids=new HashSet<string>(selection.Where(c=>c!=null&&project.Clips.Contains(c)&&string.IsNullOrEmpty(c.Text)).Select(c=>c.MediaId));return project.Media.Where(m=>m!=null&&ids.Contains(m.Id)).ToList();
+  }
   public static List<Media> View(Project project,string filter,string sort,bool descending){
    if(project==null||project.Media==null)throw new ArgumentException("Choose a valid project.");
    if(!new[]{"All media","Video","Audio","Images"}.Contains(filter)||!new[]{"Type","Name"}.Contains(sort))throw new ArgumentException("Choose a supported media filter and sort field.");
