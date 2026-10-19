@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.11
+
+- Keep source-preview decoder errors visible and pause/disable transport while failed. Add Retry to reopen a repaired source from zero without changing project data. Distinguish typed playback errors from ordinary status messages and ignore stale decoder callbacks.
+- Load images through disposed streams to prevent a failed decoder from locking source files; retry reads fresh source pixels. Wrap transport controls in narrow preview windows.
+- Add 24 checks (294 media-bin checks), reproducing the original corrupt-image false Playing status and verifying repeated failures, repaired/removed/replaced image recovery, asynchronous video failure, cleanup and project/preview/export/save preservation. Reference error/retry interaction parity remains unmeasured.
+
 ## 0.1.10
 
 - Drag one or multiple selected Media Bin entries as a consecutive sequence to a timeline time and track, sharing the validated batch insertion pipeline and one-step undo.

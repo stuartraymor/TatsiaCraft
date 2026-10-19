@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -80,6 +80,7 @@ namespace TasiaCraft {
   public bool IsPlaying {get;private set;}
   public event Action<double> PositionChanged;
   public event Action<string> Status;
+  public event Action<string> PlaybackError;
   public event Action<Clip> Selecting;
   // Toggle means Ctrl or Shift; preserve means a normal click on an existing selection.
   public event Action<Clip,bool,bool> SelectionRequested;
@@ -101,6 +102,7 @@ namespace TasiaCraft {
    timer.Interval=TimeSpan.FromMilliseconds(1000.0/30);timer.Tick+=(s,e)=>Tick();
   }
   void Say(string message){if(Status!=null)Status(message);}
+  void Fail(string message){Say(message);if(PlaybackError!=null)PlaybackError(message);}
   void UpdateOffCanvasShade(){
    if(disposed||Stage==null)return;
    if(project==null||ActualWidth<=0||ActualHeight<=0){offCanvasShade.Visibility=Visibility.Collapsed;return;}
@@ -205,19 +207,19 @@ namespace TasiaCraft {
    }}
    Say("Preparing source effect preview: "+media.Name);
    try{string path=await task;if(disposed||!layers.ContainsKey(c.Id)||!object.ReferenceEquals(layers[c.Id],layer))return;OpenSource(layer,path);Apply(layer,true);DrawHandles();Say("Source effect preview ready: "+media.Name);}
-   catch(Exception ex){layer.Failed=true;lock(proxies)proxies.Remove(key);if(!disposed)Say("Source effect preview failed: "+ex.Message);}
+   catch(Exception ex){layer.Failed=true;lock(proxies)proxies.Remove(key);if(!disposed&&layers.ContainsKey(c.Id)&&object.ReferenceEquals(layers[c.Id],layer))Fail("Source effect preview failed: "+ex.Message);}
   }
   void OpenSource(Layer layer,string path){
    Clip clip=layer.Clip;
    if(layer.Media.Kind=="image"){
-    try{var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.UriSource=new Uri(path);bitmap.EndInit();bitmap.Freeze();layer.Width=bitmap.PixelWidth;layer.Height=bitmap.PixelHeight;layer.Visual=new Image{Source=bitmap,Stretch=Stretch.Fill};layer.Box.Child=layer.Visual;layer.Ready=true;}catch(Exception ex){layer.Failed=true;Say("Image preview failed: "+ex.Message);}
+    try{var bitmap=new BitmapImage();using(var stream=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete)){bitmap.BeginInit();bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.StreamSource=stream;bitmap.EndInit();}bitmap.Freeze();layer.Width=bitmap.PixelWidth;layer.Height=bitmap.PixelHeight;layer.Visual=new Image{Source=bitmap,Stretch=Stretch.Fill};layer.Box.Child=layer.Visual;layer.Ready=true;}catch(Exception ex){layer.Failed=true;Fail("Image preview failed: "+ex.Message);}
    }else{
     layer.Width=layer.Media.Width;layer.Height=layer.Media.Height;
     var decoder=new MediaElement{LoadedBehavior=MediaState.Manual,UnloadedBehavior=MediaState.Manual,Stretch=Stretch.Fill,Volume=0,ScrubbingEnabled=true};
     layer.Decoder=decoder;layer.Visual=decoder;layer.Box.Child=decoder;
     decoder.MediaOpened+=(s,e)=>{if(disposed||!layers.ContainsKey(clip.Id)||!object.ReferenceEquals(layers[clip.Id],layer))return;layer.Ready=true;if(decoder.NaturalVideoWidth>0){layer.Width=decoder.NaturalVideoWidth;layer.Height=decoder.NaturalVideoHeight;}decoder.Pause();layer.Running=false;Apply(layer,true);DrawHandles();};
-    decoder.MediaFailed+=(s,e)=>{layer.Failed=true;Say("Live decoder cannot open "+layer.Media.Name+": "+e.ErrorException.Message+". Export may support this format.");};
-    try{decoder.Source=new Uri(path);decoder.Play();decoder.Pause();}catch(Exception ex){layer.Failed=true;Say("Live preview failed: "+ex.Message);}
+    decoder.MediaFailed+=(s,e)=>{if(disposed||!layers.ContainsKey(clip.Id)||!object.ReferenceEquals(layers[clip.Id],layer))return;layer.Failed=true;Fail("Live decoder cannot open "+layer.Media.Name+": "+e.ErrorException.Message+". Export may support this format.");};
+    try{decoder.Source=new Uri(path);decoder.Play();decoder.Pause();}catch(Exception ex){layer.Failed=true;Fail("Live preview failed: "+ex.Message);}
    }
   }
   void Update(bool seek){
