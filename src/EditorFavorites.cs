@@ -14,7 +14,7 @@ public partial class Editor {
  class PresetEntry { public string Panel,Label,Picture; public Action Apply; public string Key{get{return Panel+"/"+Label;}} }
  static readonly string[] PresetPanels={"Annotations","Visual Effects","Transitions","Animations","Behaviors","Audio Effects","Captions"};
  static readonly string[] ClipPresetPanels={"Visual Effects","Transitions","Animations","Behaviors","Audio Effects"};
- List<PresetEntry> presetCollector; string favoritesPath; List<string> favorites; string favoritesType="All";
+ List<PresetEntry> presetCollector; string favoritesPath=null; List<string> favorites; string favoritesType="All";
  string FavoritesPath{get{return favoritesPath??Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),"TasiaCraft","favorites.json");}}
  List<string> Favorites(){if(favorites!=null)return favorites;try{favorites=File.Exists(FavoritesPath)?json.Deserialize<List<string>>(File.ReadAllText(FavoritesPath)).Where(k=>!string.IsNullOrWhiteSpace(k)).Distinct().ToList():new List<string>();}catch{favorites=new List<string>();}return favorites;}
  void SaveFavorites(){try{Directory.CreateDirectory(Path.GetDirectoryName(FavoritesPath));string temp=FavoritesPath+".tmp";File.WriteAllText(temp,json.Serialize(Favorites()));if(File.Exists(FavoritesPath))File.Replace(temp,FavoritesPath,null);else File.Move(temp,FavoritesPath);}catch(Exception e){Info("Favorites could not be saved: "+e.Message);}}

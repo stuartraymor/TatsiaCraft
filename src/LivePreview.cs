@@ -237,6 +237,7 @@ namespace TasiaCraft {
    DrawHandles();
   }
   static double Fade(Clip c,double t){double a=1;if(c.FadeIn>0)a*=Math.Min(1,Math.Max(0,t/c.FadeIn));if(c.FadeOut>0)a*=Math.Min(1,Math.Max(0,(c.Duration-t)/c.FadeOut));return a;}
+  public bool Muted{get{return muted;}set{muted=value;Refresh();}} bool muted;
   void Apply(Layer l,bool seek){
    var c=l.Clip;double elapsed=Math.Max(0,Math.Min(c.Duration,position-c.Start));double k=c.Animate?elapsed/c.Duration:0;
    var behavior=Behaviors.Evaluate(c,elapsed,project.Width,project.Height);double scale=(c.Scale+(c.EndScale-c.Scale)*k)*behavior.Scale,x=c.X+(c.EndX-c.X)*k+behavior.X,y=c.Y+(c.EndY-c.Y)*k+behavior.Y;
@@ -253,7 +254,7 @@ namespace TasiaCraft {
    l.Box.IsHitTestVisible=l.Active&&!audio;
    if(l.Decoder!=null&&l.Ready&&!l.Failed){
     var d=l.Decoder;double target=c.In+elapsed*c.Speed;
-    d.SpeedRatio=c.Speed;d.Volume=l.Active&&c.Stream!="video"&&!c.Silenced?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed)*AudioEnvelope.Level(c,elapsed))):0;
+    d.SpeedRatio=c.Speed;d.Volume=l.Active&&!Muted&&c.Stream!="video"&&!c.Silenced?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed)*AudioEnvelope.Level(c,elapsed))):0;
     if(seek||!l.Running||Math.Abs(d.Position.TotalSeconds-target)>.22)d.Position=TimeSpan.FromSeconds(target);
     if(IsPlaying&&l.Active){if(!l.Running){d.Play();l.Running=true;}}else if(l.Running){d.Pause();l.Running=false;}
    }

@@ -57,6 +57,7 @@ try {
   $env:TATSIACRAFT_RELEASE_TREE=$releaseTree
   & (Join-Path $PSScriptRoot 'test-exportcommit.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-mediabin.ps1') -ToolsPath $ToolsPath
+  & (Join-Path $PSScriptRoot 'test-narration.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-behaviors.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-audiopoints.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-audiostitch.ps1') -ToolsPath $ToolsPath

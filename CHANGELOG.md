@@ -1,4 +1,11 @@
-﻿# Changelog
+# Changelog
+
+## 0.1.5
+
+- Add the Narration tool in reference order and wording. It has a microphone list, a live input level meter, an input volume slider, Mute timeline during recording, Start/Stop Voice Recording, and a script box saved with the project.
+- The timeline plays from the playhead while recording, timed to when audio first arrives. The take goes onto a new top track at the start position as one undo step, and exports with the video.
+- Add 40 narration checks, using a real-time tone source in place of a microphone. Generate Audio/Script, the wand auto-level and a countdown remain open.
+
 
 ## 0.2.0
 
