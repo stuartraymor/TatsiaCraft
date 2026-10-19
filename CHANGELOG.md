@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.9
+
+- Extend Add to Timeline at Playhead to multiple selected Media Bin entries, inserting a consecutive sequence in visible bin order in one undo step. Select the resulting clips on Main Timeline and retain existing overlaps and groups.
+- Validate the complete batch before changing the project: reject missing/stale sources, invalid metadata, locked targets and duration overflow. Preserve existing project data and sources; configure an empty unconfigured canvas from the first visual source.
+- Add 39 checks (230 media-bin checks), including actual context insertion, sorting, atomic failures, undo/redo, save/reopen and preview/decoded export agreement. Multi-item dragging and exact reference ordering/collision policies remain open.
+
 ## 0.1.8
 
 - Add Media Bin Select on Timeline and timeline Select in Media Bin context commands. Find every selected source reference, keep root groups together, and reveal distant timeline results without seeking. Reverse navigation reveals source entries through type filters while retaining sort/layout.
