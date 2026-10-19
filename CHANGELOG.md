@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.10
+
+- Drag one or multiple selected Media Bin entries as a consecutive sequence to a timeline time and track, sharing the validated batch insertion pipeline and one-step undo.
+- Require the Windows drag threshold, retain multiple selection while beginning a drag, and collapse to the clicked item on release without dragging. Scope payloads to the originating project and reject stale/malformed/missing/busy/locked drops without partial insertion.
+- Add 40 checks (270 media-bin checks) for wired press/move state and routed WPF drop, data/selection/ordering, coordinate mapping, cancellation, failure guards, undo/redo/save and preview/decoded export. The drag executor is substituted in tests; physical native drag-loop and exact current Camtasia gestures remain unmeasured.
+
 ## 0.1.9
 
 - Extend Add to Timeline at Playhead to multiple selected Media Bin entries, inserting a consecutive sequence in visible bin order in one undo step. Select the resulting clips on Main Timeline and retain existing overlaps and groups.

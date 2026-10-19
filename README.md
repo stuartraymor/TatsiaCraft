@@ -24,6 +24,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 
 - Multitrack editing, move/trim/split, copy/paste, undo/redo and JSON projects.
 - Live composition and playback with source effect proxies.
+- Multiple Media Bin items can be dragged as a sequence to a timeline track/time with guarded project-scoped payloads.
 - Sequential batch insertion from the Media Bin context menu with one undo step and whole-batch validation.
 - Bidirectional Media Bin/timeline source selection, including group units and separated streams.
 - Media Bin source preview by double-click/context, with independent playback, seeking and decoder cleanup; explicit context insertion and drag/drop.
