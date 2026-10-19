@@ -88,3 +88,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 - 0.1.3 increment: bounded atomic export commit recovery, reusing the save retry policy and preserving existing destination bytes on permanent errors. [EXPORT-COMMIT-EVIDENCE.md](EXPORT-COMMIT-EVIDENCE.md) records the observed resize/export failure and independent repair. 24 real-lock/decoded-output checks cover commit status, cleanup, source/model preservation and invalid destinations. Export profiles/queue/cancellation during finalization, network filesystems and crash recovery remain open.
 
 - 0.1.4 increment: Favorites tool and 8 Behaviors. [BEHAVIORS-EVIDENCE.md](BEHAVIORS-EVIDENCE.md). 80 checks.
+
+
+- 0.1.5 increment: Media Bin Details, Select Unused Media and Delete Unused Media, using all timeline references and preserving source files. [MEDIA-BIN-EVIDENCE.md](MEDIA-BIN-EVIDENCE.md) distinguishes TechSmith's documented menu workflow from independent Details fields and current reference-runtime unknowns. 46 checks cover actual Details UI, selection/error/no-op/busy states, undo/redo/save, missing/aliased sources and preview/decoded export preservation. Exact26.2.2 details/layout, metadata refresh and batch insertion remain open.

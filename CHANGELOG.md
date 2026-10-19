@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.5
+
+- Add Media Bin context commands Details, Select Unused Media and Delete Unused Media. Select Unused reveals all media and selects entries absent from every timeline clip, including grouped/hidden/locked and separated-stream references.
+- Delete unused project references in one undo step, with redo/save/reopen; retain source files and still-used entries sharing the same file.
+- Show read-only stored media details and file availability. Require a single bin entry for Relink, guard unsupported multiple-item insertion/dragging, and distinguish empty filters from an empty project.
+- Scope Ctrl+A/deselect to a focused bin, and guard unsupported bin editing shortcuts so Delete/Cut cannot affect selected timeline clips.
+- Add 46 checks covering selection/dirty/undo state, source-byte preservation, filters, missing media, actual Details dialog and unchanged preview/decoded export. Exact current reference dialog/layout and batch insertion remain open.
+
+
 ## 0.1.4
 
 - Add the Favorites tool. A star on every preset tile adds it to Favorites, with a Type filter and the reference empty state. F opens it. Favorites are saved per user.
