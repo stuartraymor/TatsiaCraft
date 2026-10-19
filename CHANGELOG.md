@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Add an Ascending/Descending button beside the Media Bin Name/Type sort control, with stable case-insensitive ordering and filter support.
+- Keep selected visible media through sorting, layout changes, thumbnail refreshes and tool switches. Clear hidden selections when filtering and clear old selection when opening another project, keeping Relink/Details targets accurate.
+- Keep view changes out of project data, undo history and exported output. Add 29 focused checks (75 media-bin checks total), including actual buttons, selection retention, Unicode/ties, save/reopen and preview/decoded export preservation. Exact current reference collation and layout remain open.
+
+
 ## 0.1.5
 
 - Add Media Bin context commands Details, Select Unused Media and Delete Unused Media. Select Unused reveals all media and selects entries absent from every timeline clip, including grouped/hidden/locked and separated-stream references.

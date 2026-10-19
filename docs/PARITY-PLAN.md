@@ -91,3 +91,6 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 
 
 - 0.1.5 increment: Media Bin Details, Select Unused Media and Delete Unused Media, using all timeline references and preserving source files. [MEDIA-BIN-EVIDENCE.md](MEDIA-BIN-EVIDENCE.md) distinguishes TechSmith's documented menu workflow from independent Details fields and current reference-runtime unknowns. 46 checks cover actual Details UI, selection/error/no-op/busy states, undo/redo/save, missing/aliased sources and preview/decoded export preservation. Exact26.2.2 details/layout, metadata refresh and batch insertion remain open.
+
+
+- 0.1.6 increment: Media Bin sort direction and stable visible selection through view changes/refresh, with stale selection cleared for other projects and filtered-out entries. [MEDIA-SORT-EVIDENCE.md](MEDIA-SORT-EVIDENCE.md) separates documented direction controls from independent collation/selection policy. 29 additional checks (media-bin75) cover actual controls, Unicode/ties, no model/dirty/undo mutation, Relink eligibility and preview/decoded export. Exact reference26.2.2 collation/options/layout and broader keyboard/focus parity remain open.
