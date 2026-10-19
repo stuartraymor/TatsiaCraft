@@ -155,7 +155,8 @@ namespace TasiaCraft {
    if(selections.Contains(clip)){selection=clip;StartDrag("move",e);}else e.Handled=true;
   }
   Layer Create(Clip clip){
-   var layer=new Layer{Clip=clip,Media=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId)};
+   var source=project.Media.FirstOrDefault(m=>m.Id==clip.MediaId);if(source!=null&&clip.Stream=="audio")source=new Media{Id=source.Id,Path=source.Path,Name=source.Name,Kind="audio",Duration=source.Duration,HasAudio=true};// separated audio plays its source through an audio-only layer
+   var layer=new Layer{Clip=clip,Media=source};
    layer.SourceKey=SourceKey(clip,layer.Media);
    layer.Box=new Border{Background=Brushes.Transparent,RenderTransformOrigin=new Point(.5,.5)};
    layer.Box.MouseLeftButtonDown+=(s,e)=>SelectFromPointer(clip,e);
@@ -250,7 +251,7 @@ namespace TasiaCraft {
    l.Box.IsHitTestVisible=l.Active&&!audio;
    if(l.Decoder!=null&&l.Ready&&!l.Failed){
     var d=l.Decoder;double target=c.In+elapsed*c.Speed;
-    d.SpeedRatio=c.Speed;d.Volume=l.Active?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed))):0;
+    d.SpeedRatio=c.Speed;d.Volume=l.Active&&c.Stream!="video"?Math.Min(1,Math.Max(0,c.Volume/l.Gain*Fade(c,elapsed))):0;
     if(seek||!l.Running||Math.Abs(d.Position.TotalSeconds-target)>.22)d.Position=TimeSpan.FromSeconds(target);
     if(IsPlaying&&l.Active){if(!l.Running){d.Play();l.Running=true;}}else if(l.Running){d.Pause();l.Running=false;}
    }

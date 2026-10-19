@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.0
+
+- Ripple Delete (Ctrl+Backspace, Edit menu, clip context menu) removes the selected clips and closes their gap on each affected track. Other tracks and markers stay put, and it is one undo step.
+- Ripple move: Shift-drag a clip to move it together with every later clip on its track. Grouped followers move with it. Shift-click without dragging still toggles the selection.
+- Separate Audio and Video (Edit menu, clip context menu) splits a video clip that has audio into a video-only clip and an audio-only clip, placed on a new track directly above, as in the reference. Export and live preview play each half on its own, so it can be hidden, moved or muted.
+- Add 76 ripple and separation checks covering decoded audio and picture, preview, save/reopen, locked tracks, groups and undo. Silence/Restore Audio, Stitch and Ripple Insert remain open.
+
 ## 0.0.12
 
 - Add timeline markers, following the observed reference workflow. Ctrl+M or View > Show Markers shows the Marker tray. Add a marker with Shift+M, Modify > Markers > Add Timeline Marker, or a click on the tray. New markers are named Marker N.
