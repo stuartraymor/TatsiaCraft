@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 0.1.12
+
+- Add View > Timeline Snapping controls for Media Edges, Playhead and Markers. Use enabled targets consistently for clip/group moves, marker moves/creation and playhead dragging.
+- Choose the nearest target inside the existing eight-display-pixel threshold, excluding moving items and disabled target tracks. Keep session settings separate from project data and independent from canvas snapping; retain existing Shift bypass.
+- Add 45 checks (339 media-bin/integration checks), covering option combinations, menu handlers, zoom/ties, group and track flags, session persistence, save/reopen and preview/decoded export preservation. Exact current native gesture/modifier/priority and guide styling remain unmeasured.
+
 ## 0.1.11
 
 - Keep source-preview decoder errors visible and pause/disable transport while failed. Add Retry to reopen a repaired source from zero without changing project data. Distinguish typed playback errors from ordinary status messages and ignore stale decoder callbacks.

@@ -23,6 +23,7 @@ For media import, recording, effects and export, place compatible Windows FFmpeg
 ## Current functionality
 
 - Multitrack editing, move/trim/split, copy/paste, undo/redo and JSON projects.
+- Session timeline snapping controls for Media Edges, Playhead and Markers.
 - Live composition and playback with source effect proxies.
 - Multiple Media Bin items can be dragged as a sequence to a timeline track/time with guarded project-scoped payloads.
 - Sequential batch insertion from the Media Bin context menu with one undo step and whole-batch validation.

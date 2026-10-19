@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Windows;
@@ -14,8 +14,6 @@ public partial class Editor {
  bool markerTrackVisible; string selectedMarkerId;
  double TracksTop{get{return 34+(markerTrackVisible?MarkerRowHeight:0);}}
  Marker SelectedMarker(){return selectedMarkerId==null?null:project.Markers.FirstOrDefault(m=>m.Id==selectedMarkerId);}
- IEnumerable<double> TimelineSnapTargets(){return project.Clips.SelectMany(c=>new[]{c.Start,c.Start+c.Duration}).Concat(project.Markers.Select(m=>m.Time)).Concat(new[]{0.0});}
- double SnapTime(double time,IEnumerable<double> targets){if((Keyboard.Modifiers&ModifierKeys.Shift)!=0)return time;double best=time,distance=SnapPixels/zoom;foreach(double t in targets){double d=Math.Abs(t-time);if(d<distance){distance=d;best=t;}}return best;}
  void ToggleMarkerTrack(){markerTrackVisible=!markerTrackVisible;DrawTimeline();}
  void SelectMarker(string id){var marker=project.Markers.FirstOrDefault(m=>m.Id==id);if(marker==null)return;SetSelected(new Clip[0]);selectedMarkerId=id;SyncSelection();Pause();Seek(marker.Time);Props();DrawTimeline();}
  bool AddMarkerAt(double time){
@@ -52,14 +50,14 @@ public partial class Editor {
  }
  void DrawMarkerRow(){
   var row=new Border{Width=timeline.Width-TrackHeaderWidth,Height=MarkerRowHeight,Background=B("#1d262b"),BorderBrush=B("#2e3940"),BorderThickness=new Thickness(0,1,0,0),ToolTip="Click to add a marker"};Canvas.SetLeft(row,TrackHeaderWidth);Canvas.SetTop(row,34);AutomationProperties.SetAutomationId(row,"Timeline.MarkerTray");timeline.Children.Add(row);
-  row.MouseLeftButtonDown+=(s,e)=>{AddMarkerAt(SnapTime(Math.Max(0,(e.GetPosition(timeline).X-TrackHeaderWidth)/zoom),new[]{head}));e.Handled=true;};
+  row.MouseLeftButtonDown+=(s,e)=>{AddMarkerAt(SnapMarkerCreation(Math.Max(0,(e.GetPosition(timeline).X-TrackHeaderWidth)/zoom)));e.Handled=true;};
   var header=new Border{Width=TrackHeaderWidth,Height=MarkerRowHeight,Background=B("#29323a"),BorderBrush=B("#2e3940"),BorderThickness=new Thickness(0,1,0,0),Child=new TextBlock{Text="Marker",Foreground=Brushes.White,FontSize=11,Margin=new Thickness(8,5,0,0)}};Canvas.SetTop(header,34);timeline.Children.Add(header);
   foreach(var marker in project.Markers){
    var m=marker;bool active=m.Id==selectedMarkerId;var chip=new Border{Background=B("#3a95d6"),BorderBrush=active?Brushes.White:B("#2a6fa3"),BorderThickness=new Thickness(active?1.5:1),CornerRadius=new CornerRadius(2),Padding=new Thickness(5,1,5,1),Cursor=Cursors.SizeWE,ToolTip=m.Name+"  •  "+FrameTime(m.Time)+"\nDrag to move • double-click to rename",Child=new TextBlock{Text=m.Name,Foreground=Brushes.White,FontSize=11,MaxWidth=160,TextTrimming=TextTrimming.CharacterEllipsis}};
    AutomationProperties.SetName(chip,m.Name);AutomationProperties.SetAutomationId(chip,"Marker."+m.Id);Canvas.SetLeft(chip,TrackHeaderWidth+m.Time*zoom);Canvas.SetTop(chip,38);timeline.Children.Add(chip);
    double origin=0,start=0;bool moving=false,changed=false;
    chip.MouseLeftButtonDown+=(s,e)=>{if(busy)return;e.Handled=true;if(e.ClickCount==2){RenameMarkerDialog(m.Id);return;}origin=e.GetPosition(timeline).X;start=m.Time;moving=true;changed=false;chip.CaptureMouse();};
-   chip.MouseMove+=(s,e)=>{if(!moving||!chip.IsMouseCaptured)return;double x=e.GetPosition(timeline).X;if(!changed&&Math.Abs(x-origin)<2)return;double t=SnapTime(Math.Max(0,start+(x-origin)/zoom),TimelineSnapTargets().Where(v=>v!=start).Concat(new[]{head}));var other=TimelineMarkers.At(project,t);if(other!=null&&other!=m)return;if(!changed){Checkpoint();changed=true;}TimelineMarkers.Move(project,m.Id,t);Canvas.SetLeft(chip,TrackHeaderWidth+m.Time*zoom);};
+   chip.MouseMove+=(s,e)=>{if(!moving||!chip.IsMouseCaptured)return;double x=e.GetPosition(timeline).X;if(!changed&&Math.Abs(x-origin)<2)return;double t=SnapMarkerTime(Math.Max(0,start+(x-origin)/zoom),m.Id);var other=TimelineMarkers.At(project,t);if(other!=null&&other!=m)return;if(!changed){Checkpoint();changed=true;}TimelineMarkers.Move(project,m.Id,t);Canvas.SetLeft(chip,TrackHeaderWidth+m.Time*zoom);};
    chip.MouseLeftButtonUp+=(s,e)=>{if(!moving)return;moving=false;chip.ReleaseMouseCapture();e.Handled=true;if(changed){selectedMarkerId=m.Id;Refresh();Info(m.Name+" moved to "+FrameTime(m.Time));}else SelectMarker(m.Id);};
    var menu=new ContextMenu();var rename=new MenuItem{Header="Rename"};rename.Click+=(s,e)=>RenameMarkerDialog(m.Id);menu.Items.Add(rename);var delete=new MenuItem{Header="Delete"};delete.Click+=(s,e)=>DeleteMarker(m.Id);menu.Items.Add(delete);chip.ContextMenu=menu;
   }
