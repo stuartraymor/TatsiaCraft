@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 0.2.0
+
+- Snap moving timeline selections by either their leading or trailing bound, choosing the nearest eligible target within the existing display-pixel threshold. Preserve internal group timing and gaps.
+- Respect session target settings, moving-item exclusions, source/target track flags, existing Shift bypass and move-operation guards. Keep leading-edge priority for equal corrections.
+- Add 39 checks (378 media-bin/integration checks), including both directions/endpoints, zoom/ties/invalid inputs, group bounds, actual editor movement, one-step undo/redo, save/reopen and preview/decoded export. Physical gestures, exact native priorities and snap-line visuals remain unmeasured.
+- Revision numbering rolls from 0.1.12 to 0.2.0 under the project's requested sequence.
+
 ## 0.1.12
 
 - Add View > Timeline Snapping controls for Media Edges, Playhead and Markers. Use enabled targets consistently for clip/group moves, marker moves/creation and playhead dragging.
