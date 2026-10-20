@@ -32,7 +32,7 @@ namespace TasiaCraft {
    double k=c.Animate&&c.Duration>0?Math.Max(0,Math.Min(1,local/c.Duration)):0;var b=Behaviors.Evaluate(c,local,p.Width,p.Height);
    double scale=(c.Scale+(c.EndScale-c.Scale)*k)*b.Scale,x=c.X+(c.EndX-c.X)*k+b.X,y=c.Y+(c.EndY-c.Y)*k+b.Y;
    double w=m.Width,h=m.Height;if(!c.NativeSize){double fit=Math.Min(p.Width/w,p.Height/h);w*=fit;h*=fit;}
-   double cx=(p.Width-w)/2+x+w/2,cy=(p.Height-h)/2+y+h/2,dx=(sx/m.Width-.5)*w*scale,dy=(sy/m.Height-.5)*h*scale,a=c.Rotation*Math.PI/180;
+   double cx=(p.Width-w)/2+x+w/2,cy=(p.Height-h)/2+y+h/2,dx=(sx/m.Width-.5)*w*scale,dy=(sy/m.Height-.5)*h*scale,a=(c.Rotation+b.Rotation)*Math.PI/180;
    point=new Point(cx+dx*Math.Cos(a)-dy*Math.Sin(a),cy+dx*Math.Sin(a)+dy*Math.Cos(a));pixel=w/m.Width*scale;return true;
   }
   static Geometry Arrow(){return Geometry.Parse("M0,0 L0,17 L4,13 L7,20 L10,19 L7,12 L12,12 Z");}
@@ -54,7 +54,7 @@ namespace TasiaCraft {
      else if(e.Name.EndsWith("Target")){double tr=r*(1-.6*f);d.DrawEllipse(null,pen,cp,tr,tr);d.DrawLine(pen,new Point(cp.X-tr*1.3,cp.Y),new Point(cp.X+tr*1.3,cp.Y));d.DrawLine(pen,new Point(cp.X,cp.Y-tr*1.3),new Point(cp.X,cp.Y+tr*1.3));}
     }}
    if(mapped&&visible&&c.CursorOpacity>0){
-    var geometry=Shape(kind).Clone();var tg=new TransformGroup();tg.Children.Add(new ScaleTransform(unit*c.CursorScale,unit*c.CursorScale));tg.Children.Add(new RotateTransform(c.Rotation));tg.Children.Add(new TranslateTransform(at.X,at.Y));geometry.Transform=tg;
+    var geometry=Shape(kind).Clone();var tg=new TransformGroup();tg.Children.Add(new ScaleTransform(unit*c.CursorScale,unit*c.CursorScale));tg.Children.Add(new RotateTransform(c.Rotation+Behaviors.Evaluate(c,local,p.Width,p.Height).Rotation));tg.Children.Add(new TranslateTransform(at.X,at.Y));geometry.Transform=tg;
     var colorEffect=effects.FirstOrDefault(e=>e.Name=="Cursor Color");var fill=colorEffect!=null?new SolidColorBrush(ColorOf(colorEffect)):Brushes.White;
     d.PushOpacity(c.CursorOpacity);
     foreach(var e in effects.Where(e=>e.Name=="Cursor Shadow")){var shadow=geometry.Clone();var st=new TransformGroup();st.Children.Add(tg);st.Children.Add(new TranslateTransform(3*unit,3*unit));shadow.Transform=st;var color=ColorOf(e);d.DrawGeometry(new SolidColorBrush(Color.FromArgb(120,color.R,color.G,color.B)),null,shadow);}

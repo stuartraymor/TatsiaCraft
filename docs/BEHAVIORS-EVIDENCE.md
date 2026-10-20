@@ -33,7 +33,7 @@ Target: installed Camtasia 26.2.2.19936 on Windows, 2026-10-18. Everything added
 
 ### Behaviors
 
-Eight of the 13 reference behaviors are implemented. Each motion curve is an independent definition:
+All 13 reference behaviors are implemented: eight in 0.1.4 and the last five in 0.2.4. Each motion curve is an independent definition:
 
 | Behavior | In / Out | During |
 |---|---|---|
@@ -45,6 +45,11 @@ Eight of the 13 reference behaviors are implemented. Each motion curve is an ind
 | Pulsating | — | scale 100–106% every 0.8 s |
 | Tremble | — | jitter of up to 3 px |
 | Drifting | linear alpha | slow drift of ±2% canvas width |
+| Explode | shrinks from 180% to 100% while fading in; bursts back to 180% while fading out | — |
+| Jump And Fall | drops from 30% canvas height with decaying bounces; falls 60% of the canvas height while fading out | — |
+| Reveal | grows from 60% to 100% while fading in; fades out | — |
+| Shifting | — | gentle circular sway of ±2% canvas size every 2 s |
+| Wiggle | — | tilts ±6° at 1.5 Hz (animated rotation; export uses a fixed-size rotate canvas) |
 
 - **Applying:** click a tile, use its context menu, or use Modify > Add Behavior. Behaviors apply to the selected visual or text clips. Audio clips and locked tracks are refused.
 - **Defaults:** In and Out are each 1 s, or a third of the clip if shorter. If In plus Out is longer than the clip, both shrink proportionally.
@@ -54,7 +59,7 @@ Eight of the 13 reference behaviors are implemented. Each motion curve is an ind
   - Export scales media per frame, padded to a fixed size so rotation and transform animation still work. Alpha uses fade filters, and position uses overlay expressions.
   - Text uses drawtext alpha, position and per-frame font size.
 
-**Still open:** Explode, Jump And Fall, Reveal, Shifting, Wiggle; the Style, Movement and Speed options; custom, renamed or deleted presets; and Cursor Effects and Narration.
+**Still open:** the Style, Movement and Speed options; custom, renamed or deleted presets; and Cursor Effects and Narration.
 
 ## Acceptance
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+- Complete the reference Behaviors catalog with Explode, Jump And Fall, Reveal, Shifting and Wiggle, bringing it to 13 behaviors. Preview and export render them identically, and cursor effects follow them.
+- Behaviors can now animate rotation (Wiggle). Export rotates on a fixed-size canvas so other transforms keep working.
+- Add 28 behavior checks (108 total), with export/preview pixel probes for each new behavior. Behavior Style/Movement options remain open.
+
 ## 0.2.3
 
 - New consumer installer, **TatsiaCraft-Setup-<version>.exe**. It's a single download that includes the FFmpeg media tools and their licenses, installs for the current user without administrator rights, and shows a progress window with options for a desktop shortcut, opening .tasiaproj files and starting the app when done.

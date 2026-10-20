@@ -23,7 +23,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | 3 | Import, media bin, sort/filter/search, library, favorites, templates | Limited original implementation | Formats, duplicates, missing/relinked media, metadata, drag/drop and persistence |
 | 4 | Timeline move/trim/split/delete, ranges, snapping, zoom, track controls | Basic edits/track visibility/lock exist | Exact boundaries, frame rounding, same-track overlaps, disabled states, shortcut equivalence |
 | 5 | Multiple selection, grouping, ripple editing, markers, AV separation | Flat grouping (0.0.9-0.0.10) and timeline markers with tray, navigation, snapping and MP4 chapters (0.0.12); Ripple Delete, ripple move and Separate Audio and Video (0.1.0); Silence/Restore Audio, Stitch and Ripple Insert (0.1.1); audio points, range silencing and non-continuous stitches open | Selection and group state, linked timing, ripple propagation, undo/save/export |
-| 6 | Animation/keyframes/easing and Behaviors | Simple transform endpoints; 8 of 13 Behaviors with In/Out timing (0.1.4); keyframes, easing choices and the remaining behaviors open | All catalogs, interpolation, parameter ranges, overlapping effects and rendered output |
+| 6 | Animation/keyframes/easing and Behaviors | Simple transform endpoints; all 13 Behaviors with In/Out timing (0.1.4, 0.2.4); keyframes and Style/Movement options open | All catalogs, interpolation, parameter ranges, overlapping effects and rendered output |
 | 7 | Visual effects and transitions | Small independent subset | Inventory every preset and adjustable parameter; alpha, duration, overlaps, performance |
 | 8 | Text, callouts, shapes, annotations | Basic text and three shapes | Fonts/colors/layout, styling, rotation, resize, object grouping and export |
 | 9 | Audio editing/effects/meters | Gain/fades/proxies; Silence/Restore (0.1.1); audio points with range silencing (0.1.2); meters, ducking and noise tools open | Sample alignment, normalization, envelope points, noise processing, meters, multitrack mixes |
@@ -114,3 +114,5 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 - 0.2.2 increment: separate cursor recording and the Cursor Effects tool. [CURSOR-EFFECTS-EVIDENCE.md](CURSOR-EFFECTS-EVIDENCE.md). 60 checks.
 
 - 0.2.3 increment: consumer installer and updater. See [INSTALLATION.md](INSTALLATION.md). About 300 Setup checks plus update-logic checks.
+
+- 0.2.4 increment: Explode, Jump And Fall, Reveal, Shifting and Wiggle, with animated rotation. [BEHAVIORS-EVIDENCE.md](BEHAVIORS-EVIDENCE.md). 108 behavior checks.

@@ -254,7 +254,7 @@ namespace TasiaCraft {
    l.Box.Width=audio?1:w;l.Box.Height=audio?1:h;
    l.Box.Clip=!text&&!audio?new RectangleGeometry(new Rect(w*c.CropLeft,h*c.CropTop,Math.Max(0,w*(1-c.CropLeft-c.CropRight)),Math.Max(0,h*(1-c.CropTop-c.CropBottom)))):null;
    Canvas.SetLeft(l.Box,(project.Width-w)/2+x);Canvas.SetTop(l.Box,(project.Height-h)/2+y);
-   var transforms=new TransformGroup();transforms.Children.Add(new ScaleTransform(scale,scale));transforms.Children.Add(new RotateTransform(text?0:c.Rotation));l.Box.RenderTransform=transforms;
+   var transforms=new TransformGroup();transforms.Children.Add(new ScaleTransform(scale,scale));transforms.Children.Add(new RotateTransform(text?0:c.Rotation+behavior.Rotation));l.Box.RenderTransform=transforms;
    Panel.SetZIndex(l.Box,l.Z*2);
    if(l.Cursor!=null){l.Cursor.Project=project;l.Cursor.Source=c;l.Cursor.Width=project.Width;l.Cursor.Height=project.Height;Canvas.SetLeft(l.Cursor,0);Canvas.SetTop(l.Cursor,0);Panel.SetZIndex(l.Cursor,l.Z*2+1);l.Cursor.Visibility=l.Active&&!audio?Visibility.Visible:Visibility.Collapsed;l.Cursor.Local=elapsed;l.Cursor.InvalidateVisual();}
    l.Box.Opacity=l.Active&&!audio?Math.Max(0,Math.Min(1,c.Opacity))*Fade(c,elapsed)*behavior.Alpha:0;
