@@ -56,9 +56,13 @@ This builds and runs the isolated canvas workspace harness on an interactive Win
 
 Research captures, proprietary assets, installers, media files, local account data and investigation reports are excluded.
 
-## Feature plan and installation
+## Install
 
-The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries and remaining gaps. [Installation instructions](docs/INSTALLATION.md) explain versioned per-user installs and payload validation. For the crop acceptance suite, run `scripts/test-crop.ps1 -ToolsPath <compatible-tools-directory>`; it checks actual preview and decoded export pixels, save/legacy projects and invalid input.
+Download **TatsiaCraft-Setup-<version>.exe** from the [latest release](https://github.com/stuartraymor/TatsiaCraft/releases) and run it. It installs for your account without administrator rights, includes the FFmpeg media tools, adds TatsiaCraft to Apps & Features, and updates in place. **Help > Check for Updates...** installs newer releases. See [installation](docs/INSTALLATION.md) for options and silent installs.
+
+## Feature plan
+
+The [parity plan](docs/PARITY-PLAN.md) tracks each workflow, evidence boundaries and remaining gaps. For the crop acceptance suite, run `scripts/test-crop.ps1 -ToolsPath <compatible-tools-directory>`; it checks actual preview and decoded export pixels, save/legacy projects and invalid input.
 
 `scripts/test-pan.ps1` runs 33 viewport, tool-mode and state-preservation checks without external media tools.
 

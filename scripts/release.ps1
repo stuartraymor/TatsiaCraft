@@ -49,10 +49,12 @@ try {
  $ToolsPath=(Get-Item -LiteralPath $ToolsPath).FullName
  $preservedApp=Join-Path $releaseRoot ("artifacts\TatsiaCraft-$version.exe")
  $treeRecord=Join-Path $releaseRoot ("artifacts\TatsiaCraft-$version-tree.txt")
- $canReuse=(Test-Path -LiteralPath $preservedApp) -and (Test-Path -LiteralPath $treeRecord) -and ((Get-Content -LiteralPath $treeRecord -Raw).Trim() -eq $releaseTree)
+ $preservedSetup=Join-Path $releaseRoot ("artifacts\TatsiaCraft-Setup-$version.exe")
+ $canReuse=(Test-Path -LiteralPath $preservedApp) -and (Test-Path -LiteralPath $preservedSetup) -and (Test-Path -LiteralPath $treeRecord) -and ((Get-Content -LiteralPath $treeRecord -Raw).Trim() -eq $releaseTree)
  if($canReuse){
   if((Get-Item -LiteralPath $preservedApp).VersionInfo.ProductVersion -ne $version){throw 'Preserved release artifact version mismatch'}
   Copy-Item -LiteralPath $preservedApp -Destination 'dist\TasiaCraft\TasiaCraft.exe'
+  if((Get-Item -LiteralPath $preservedSetup).VersionInfo.ProductVersion -ne $version){throw 'Preserved setup version mismatch'}
  }else{
   $env:TATSIACRAFT_RELEASE_TREE=$releaseTree
   & (Join-Path $PSScriptRoot 'test-exportcommit.ps1') -ToolsPath $ToolsPath
@@ -75,17 +77,21 @@ try {
   & (Join-Path $PSScriptRoot 'test-pan.ps1')
   & (Join-Path $PSScriptRoot 'test-crop.ps1') -ToolsPath $ToolsPath
   & (Join-Path $PSScriptRoot 'test-canvas.ps1')
-  & (Join-Path $releaseRoot 'tests\InstallTest.ps1') -ToolsPath $ToolsPath
+  # Consumer installer: build, then verify install/update/repair/rollback/uninstall in isolation.
+  & (Join-Path $PSScriptRoot 'build-setup.ps1') -ToolsPath $ToolsPath
+  & (Join-Path $releaseRoot 'tests\SetupTest.ps1') -SetupPath (Join-Path $releaseRoot ("dist\TatsiaCraft-Setup-$version.exe"))
+  if($LASTEXITCODE -and $LASTEXITCODE -ne 0){throw 'Setup tests failed'}
   Copy-Item -LiteralPath 'dist\TasiaCraft\TasiaCraft.exe' -Destination $preservedApp
+  Copy-Item -LiteralPath (Join-Path $releaseRoot ("dist\TatsiaCraft-Setup-$version.exe")) -Destination $preservedSetup
   Set-Content -LiteralPath $treeRecord -Value $releaseTree -Encoding ASCII
  }
- $installed=Join-Path (Join-Path $env:LOCALAPPDATA 'Programs\TatsiaCraft') $version
- if(Test-Path -LiteralPath $installed){
-  if((Get-FileHash -LiteralPath (Join-Path $installed 'TasiaCraft.exe')).Hash -ne (Get-FileHash -LiteralPath $preservedApp).Hash){throw 'Installed and preserved release executables differ'}
-  $manifest=Get-Content -LiteralPath (Join-Path $installed 'install-manifest.json') -Raw | ConvertFrom-Json
-  if($manifest.version -ne $version -or -not $manifest.toolsIncluded){throw 'Existing installation manifest does not match this release'}
-  foreach($entry in $manifest.files){$payload=Get-Item -LiteralPath (Join-Path $installed $entry.path);if($payload.Length -ne $entry.bytes -or (Get-FileHash -LiteralPath $payload.FullName).Hash -ne $entry.sha256){throw ('Installed payload verification failed: '+$entry.path)}}
- }else{$installed=& (Join-Path $PSScriptRoot 'install.ps1') -ToolsPath $ToolsPath}
+ $setupRun=Start-Process -FilePath $preservedSetup -ArgumentList '/quiet' -PassThru -Wait
+ if($setupRun.ExitCode -ne 0){throw ('Setup install failed with exit code '+$setupRun.ExitCode+'; see %TEMP%\TatsiaCraft-Setup.log')}
+ $installed=Join-Path $env:LOCALAPPDATA 'Programs\TatsiaCraft'
+ if((Get-FileHash -LiteralPath (Join-Path $installed 'TasiaCraft.exe')).Hash -ne (Get-FileHash -LiteralPath $preservedApp).Hash){throw 'Installed and preserved release executables differ'}
+ $manifest=Get-Content -LiteralPath (Join-Path $installed 'install-manifest.json') -Raw | ConvertFrom-Json
+ if($manifest.version -ne $version){throw 'Installed manifest does not match this release'}
+ foreach($entry in $manifest.files){$payload=Get-Item -LiteralPath (Join-Path $installed $entry.path);if($payload.Length -ne $entry.bytes){throw ('Installed payload verification failed: '+$entry.path)}}
  $smoke=Start-Process -FilePath (Join-Path $installed 'TasiaCraft.exe') -WindowStyle Hidden -PassThru
  try{
   $deadline=[DateTime]::UtcNow.AddSeconds(15)
@@ -115,11 +121,11 @@ try {
  $release=$null
  try{$release=Invoke-RestMethod -Uri ($api+'/releases/tags/'+$tag) -Headers $headers}catch{if([int]$_.Exception.Response.StatusCode -ne 404){throw}}
  if(-not $release){
-  $body=@{tag_name=$tag;target_commitish=$head;name=('TatsiaCraft '+$version);body=($Message+"`n`nWindows x64 development preview. The executable requires .NET Framework 4.8. Media features require separately supplied compatible FFmpeg/FFprobe tools beside the executable in a tools folder. Complete feature parity and comparative performance are not yet established.");draft=$true;prerelease=$true} | ConvertTo-Json
+  $body=@{tag_name=$tag;target_commitish=$head;name=('TatsiaCraft '+$version);body=($Message+"`n`n**Install:** download TatsiaCraft-Setup-$version.exe and run it. Setup installs for the current user (no administrator rights), includes the FFmpeg media tools, updates an existing install in place, and adds TatsiaCraft to Apps & Features for uninstalling. Existing users can also use Help > Check for Updates.`n`nTatsiaCraft-$version.exe is the bare editor for advanced use (it needs FFmpeg in a tools folder beside it). Windows 10/11 x64 with .NET Framework 4.8. Development preview: complete feature parity and comparative performance are not yet established. Setup is not code-signed, so Windows SmartScreen may ask you to confirm.");draft=$true;prerelease=$true} | ConvertTo-Json
   $release=Invoke-RestMethod -Method Post -Uri ($api+'/releases') -Headers $headers -ContentType 'application/json' -Body $body
  }
  $releaseApi=$api+'/releases/'+$release.id
- foreach($path in @($appPath,$sourcePath)){
+ foreach($path in @($preservedSetup,$appPath,$sourcePath)){
   $file=Get-Item -LiteralPath $path
   $existing=@($release.assets | Where-Object name -eq $file.Name)
   if($existing.Count){
@@ -136,6 +142,6 @@ try {
  if($release.draft){$release=Invoke-RestMethod -Method Patch -Uri $releaseApi -Headers $headers -ContentType 'application/json' -Body '{"draft":false}'}
  $verified=Invoke-RestMethod -Uri $releaseApi -Headers $headers
  $remoteHead=(& git ls-remote origin refs/heads/main).Split()[0]
- if($LASTEXITCODE -ne 0 -or $remoteHead -ne $head -or $verified.draft -or $verified.tag_name -ne $tag -or @($verified.assets | Where-Object state -eq 'uploaded').Count -lt 2){throw 'Remote revision verification failed'}
+ if($LASTEXITCODE -ne 0 -or $remoteHead -ne $head -or $verified.draft -or $verified.tag_name -ne $tag -or @($verified.assets | Where-Object state -eq 'uploaded').Count -lt 3){throw 'Remote revision verification failed'}
  Write-Output ('Published '+$verified.html_url)
 } finally {$env:TATSIACRAFT_RELEASE_TREE=$priorReleaseTree;Pop-Location}

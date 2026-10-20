@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3
+
+- New consumer installer, **TatsiaCraft-Setup-<version>.exe**. It's a single download that includes the FFmpeg media tools and their licenses, installs for the current user without administrator rights, and shows a progress window with options for a desktop shortcut, opening .tasiaproj files and starting the app when done.
+- Setup updates one install in place and replaces only files whose SHA-256 changed, so unchanged FFmpeg files aren't rewritten. Every file is verified against an embedded manifest, and a failure rolls back to the previous version. Setup waits for TatsiaCraft to close before changing anything, and offers to remove older side-by-side versions.
+- Setup registers TatsiaCraft in Apps & Features with a real uninstaller that keeps projects and settings. It also adds one TatsiaCraft Start menu shortcut, a Run alias, and an optional .tasiaproj association; double-clicking a project now opens it. Silent switches are available for automation, with a log in %TEMP%.
+- Add Help > Check for Updates..., which finds the newest release, downloads its Setup, verifies its size and SHA-256 and runs it.
+- Releases now publish Setup as the main download. Add about 300 installer checks (install, repair, update, rollback, running-app guard, legacy cleanup, uninstall) and update-logic checks.
+
 ## 0.2.2
 
 - Add the Cursor Effects tool with Cursor, Left Click and Right Click tabs. It has 12 effects: Cursor Color, Glow, Highlight, Shadow, Smoothing and Spotlight, plus Left/Right Click Burst 1, Rings and Target. Each has its own size and color settings, and cursor scale and opacity are set per clip.

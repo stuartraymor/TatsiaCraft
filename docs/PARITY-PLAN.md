@@ -35,7 +35,7 @@ Every row needs a detailed sub-inventory before it can be marked complete; this 
 | 15 | Interactive hotspots/quizzes/Smart Player | Open | Browser/player behavior, metadata, accessibility and distribution |
 | 16 | AI tools, integrations, cloud and external services | Open; service behavior cannot be inferred from local code alone | Current actual availability, local/service alternatives, quality and failure modes |
 | 17 | Accessibility, localization, preferences and help | Partial | Keyboard-only flows, UIA, screen readers, persisted preferences, locale and DPI |
-| 18 | Install/update/uninstall and distribution | Versioned installer increment under test | Clean install, hash identity, startup, shortcuts, version coexistence, safe user data handling |
+| 18 | Install/update/uninstall and distribution | Per-user Setup.exe with bundled FFmpeg, in-place delta updates, rollback, Apps & Features uninstall, file association and in-app update check (0.2.3); code signing open | Clean install, hash identity, startup, shortcuts, version coexistence, safe user data handling |
 | 19 | Exact visual comparison and performance | Not established | Matched-size state captures, declared visual acceptance, playback drops/latency, memory, export throughput/quality |
 
 ## Revision ledger
@@ -112,3 +112,5 @@ Windows live crop observation: reference at 100% view zoom, 320×180 fixture, Sc
 - 0.2.1 increment: Narration tool with microphone selection, live meter, input level, timeline mute, synced voice recording placed on a new track, and a saved script. [NARRATION-EVIDENCE.md](NARRATION-EVIDENCE.md). 40 checks.
 
 - 0.2.2 increment: separate cursor recording and the Cursor Effects tool. [CURSOR-EFFECTS-EVIDENCE.md](CURSOR-EFFECTS-EVIDENCE.md). 60 checks.
+
+- 0.2.3 increment: consumer installer and updater. See [INSTALLATION.md](INSTALLATION.md). About 300 Setup checks plus update-logic checks.
